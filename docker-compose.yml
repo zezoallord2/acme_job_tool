@@ -1,0 +1,157 @@
+# Acme Jobs — MODE A: simple persistent server.
+#
+#   docker compose up --build
+#
+# Requires nothing paid. PostgreSQL runs alongside, files live on a named volume,
+# and every AI feature works in Manual Mode with no API key.
+#
+# S3 is NOT required for this mode.
+#
+# Before exposing this to the internet, replace every placeholder secret below
+# (they are deliberately recognisable so a half-configured deploy fails loudly).
+
+name: acme-jobs
+
+x-app-env: &app-env
+  NODE_ENV: production
+  APP_URL: ${APP_URL:?set APP_URL to your public https origin}
+  PORT: "3100"
+
+  DATABASE_URL: postgresql://acme:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/acme_jobs?schema=public
+  DIRECT_URL: postgresql://acme:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/acme_jobs?schema=public
+
+  # 32+ random chars each. The server refuses to start if these are placeholders.
+  AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET}
+  KEY_ENCRYPTION_SECRET: ${KEY_ENCRYPTION_SECRET:?set KEY_ENCRYPTION_SECRET}
+
+  ZERO_COST_MODE: "true"
+  ACME_AI_ENABLED: "false"
+  DEFAULT_AI_PROVIDER: manual
+  AI_MODE_PRIORITY: local,manual
+
+  # MODE A: local files on a persistent volume. No S3 needed.
+  STORAGE_DRIVER: local
+  DATA_DIR: /app/data
+
+  # Transactional mail. Use `development` to write to the local log instead.
+  MAIL_DRIVER: ${MAIL_DRIVER:-smtp}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-no-reply@example.com}
+  MAIL_FROM_NAME: Acme Jobs
+
+  BILLING_PROVIDER: ${BILLING_PROVIDER:-manual}
+  BILLING_LINK_SECRET: ${BILLING_LINK_SECRET:-}
+
+  # Automatic repair is refused outside a local environment.
+  ALLOW_AUTO_REPAIR_IN_ENV: none
+  RUN_WORKER_INLINE: "false"
+  QUEUE_PROVIDER: postgres
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: acme
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: acme_jobs
+      # Deterministic collation keeps text ordering identical across machines.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - acme-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acme -d acme_jobs"]
+      interval: 5s
+      timeout: 5s
+      # Long enough that a slow first boot on a cold volume does not look like a
+      # failure and cause Compose to kill the migration step.
+      retries: 30
+
+  # Runs once per deploy, before anything serves traffic. Exits when done.
+  migrate:
+    build:
+      context: .
+    environment: *app-env
+    # `prisma` is on PATH because the image installs the pinned CLI into
+    # /opt/prisma-cli. `npx` is deliberately avoided: it tries to write to
+    # $HOME/.npm, and the image runs as a user with no home directory.
+    #
+    # `prisma generate` is NOT run here: the client is generated during the image
+    # build, and running it again in the runtime image fails because the pruned
+    # standalone bundle does not ship the engine wasm the generator imports.
+    command: >
+      sh -c "prisma migrate deploy
+      && node dist/scripts/production-check.js"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    environment: *app-env
+    # Migrate first, then serve. Compose `depends_on` with a completed condition
+    # guarantees the schema is current before the first request.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${APP_PORT:-3100}:3100"
+    volumes:
+      # MODE A requirement: a persistent volume, or uploads and exports vanish
+      # on every deploy.
+      - acme-data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3100/api/health?strict=1').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      # Generous: a cold start after a deploy compiles nothing but does run the
+      # readiness gate, which touches the database.
+      retries: 5
+      start_period: 40s
+
+  worker:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      # The worker is its own process here, so the web process must not also
+      # run background jobs.
+      RUN_WORKER_INLINE: "false"
+    command: ["node", "dist/worker/index.js"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      # Shares the data volume so the worker can read and delete uploads.
+      - acme-data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3100/api/health').then(()=>process.exit(0)).catch(()=>process.exit(1))",
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  acme-pgdata:
+  acme-data:

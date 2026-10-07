@@ -1,0 +1,25 @@
+.git
+.gitignore
+node_modules
+.next
+out
+coverage
+test-results
+playwright-report
+blob-report
+data
+backups
+.env
+.env.local
+.env.*.local
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+README.md
+docs
+/acme webite
+/acme-webite-whop
+/my website

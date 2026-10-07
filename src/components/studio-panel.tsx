@@ -1,0 +1,281 @@
+"use client";
+
+import { useCallback, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import {
+  buildStudioPromptAction,
+  submitStudioAction,
+  type StudioDescriptorView,
+  type StudioSubmitResult,
+} from "@/app/actions/studio-actions";
+
+export type {
+  StudioDescriptorView,
+  StudioSubmitResult,
+} from "@/app/actions/studio-actions";
+import {
+  ManualModePanel,
+  type ManualPromptPayload,
+} from "@/components/manual-mode-panel";
+import { Alert, Field } from "@/components/ui/primitives";
+
+/**
+ * One panel for every studio workflow.
+ *
+ * The descriptor arrives from the server, so this component knows nothing about
+ * any specific workflow. Adding a workflow to the registry is enough to make it
+ * appear here with a working Manual Mode round trip.
+ */
+
+const IDLE: StudioSubmitResult = { ok: true };
+
+export function StudioPanel({
+  descriptor,
+  initialValues = {},
+}: {
+  descriptor: StudioDescriptorView;
+  initialValues?: Record<string, string>;
+}) {
+  const [busy, startTransition] = useTransition();
+  const [values, setValues] = useState<Record<string, string>>({
+    ...initialValues,
+  });
+  const [prompt, setPrompt] = useState<ManualPromptPayload | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [state, setState] = useState<StudioSubmitResult>(IDLE);
+
+  const disabled =
+    descriptor.fields
+      .filter((f) => f.required)
+      .some((f) => (values[f.name] ?? "").trim().length < (f.minLength ?? 1)) ||
+    descriptor.fields.some(
+      (f) => f.kind === "select" && f.required && !values[f.name],
+    );
+
+  // A stable key so the callbacks can depend on the values object without the
+  // dependency array containing a non-simple expression.
+  const valuesKey = useMemo(() => JSON.stringify(values), [values]);
+
+  const formData = useCallback(
+    (raw?: string) => {
+      const fd = new FormData();
+      fd.set("workflow", descriptor.id);
+      for (const [k, v] of Object.entries(values)) fd.set(k, v);
+      if (raw !== undefined) fd.set("raw", raw);
+      return fd;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [descriptor.id, valuesKey],
+  );
+
+  const build = useCallback(() => {
+    setError(null);
+    startTransition(async () => {
+      const res = await buildStudioPromptAction(formData());
+      if (res.ok) setPrompt(res.prompt);
+      else setError(res.message || "The prompt could not be built.");
+    });
+  }, [formData]);
+
+  const validate = useCallback(
+    (raw: string) =>
+      new Promise<{ ok: boolean; errors: string[]; repaired: boolean }>(
+        (resolve) => {
+          startTransition(async () => {
+            setSubmitted(true);
+            const res = await submitStudioAction(IDLE, formData(raw));
+            setState(res);
+            resolve({
+              ok: res.ok,
+              errors: res.errors ?? [],
+              repaired: false,
+            });
+          });
+        },
+      ),
+    [formData],
+  );
+
+  if (submitted && state.ok && state.result) {
+    const r = state.result;
+    return (
+      <div className="space-y-4">
+        <Alert tone="success" title="Saved">
+          {r.summary}
+        </Alert>
+
+        {r.rows.length > 0 ? (
+          <dl className="card-muted space-y-1.5 p-3">
+            {r.rows.map((row) => (
+              <div key={row.label} className="flex flex-wrap gap-2">
+                <dt className="text-xs font-semibold text-[var(--text-muted)]">
+                  {row.label}:
+                </dt>
+                <dd className="text-sm text-[var(--text)]">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+        {r.items.length > 0 ? (
+          <ul className="space-y-2">
+            {r.items.map((item, i) => (
+              <li key={`${item.title}-${i}`} className="card-muted p-3">
+                <p className="text-sm text-[var(--text)]">{item.title}</p>
+                {item.detail ? (
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    {item.detail}
+                  </p>
+                ) : null}
+                {item.tags && item.tags.length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {item.tags.map((t) => (
+                      <span key={t} className="badge badge-unknown">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {r.warnings.length > 0 ? (
+          <Alert tone="warning" title="Check these before you use it">
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {r.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          </Alert>
+        ) : null}
+
+        {r.needsInput.length > 0 ? (
+          <Alert tone="info" title="Still missing detail">
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {r.needsInput.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          </Alert>
+        ) : null}
+
+        {r.savedPath ? (
+          <Link href={r.savedPath} className="btn-primary">
+            {r.savedLabel ?? "Open it"}
+          </Link>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {error ? <Alert tone="error">{error}</Alert> : null}
+      {submitted && !state.ok && state.message ? (
+        <Alert tone="error" title="Nothing was saved">
+          {state.message}
+        </Alert>
+      ) : null}
+
+      {prompt ? (
+        <>
+          <p className="text-sm text-[var(--text-muted)]">
+            Paste the response below. It is validated against the schema before
+            anything is saved.
+          </p>
+          <ManualModePanel
+            prompt={prompt}
+            busy={busy}
+            onValidate={validate}
+            actionLabel={descriptor.actionLabel}
+          />
+        </>
+      ) : (
+        <div className="space-y-4">
+          {descriptor.fields.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {descriptor.fields.map((field) => {
+                const id = `studio-${descriptor.id}-${field.name}`;
+                const common = {
+                  id,
+                  name: field.name,
+                  required: field.required,
+                  maxLength: field.kind === "textarea" ? 8000 : 300,
+                  className: "input",
+                  value: values[field.name] ?? "",
+                  onChange: (
+                    e: React.ChangeEvent<
+                      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+                    >,
+                  ) =>
+                    setValues((prev) => ({
+                      ...prev,
+                      [field.name]: e.target.value,
+                    })),
+                };
+
+                return (
+                  <div
+                    key={field.name}
+                    className={field.kind === "textarea" ? "sm:col-span-2" : ""}
+                  >
+                    <Field
+                      label={field.label}
+                      htmlFor={id}
+                      required={field.required}
+                      hint={field.hint}
+                    >
+                      {field.kind === "select" ? (
+                        <select {...common}>
+                          <option value="">
+                            {field.options.length === 0
+                              ? "Nothing saved yet"
+                              : "Choose one"}
+                          </option>
+                          {field.options.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.kind === "textarea" ? (
+                        <textarea
+                          {...common}
+                          style={{ minHeight: (field.rows ?? 5) * 24 }}
+                          placeholder={field.placeholder}
+                        />
+                      ) : (
+                        <input
+                          {...common}
+                          type={field.kind === "number" ? "number" : "text"}
+                          placeholder={field.placeholder}
+                        />
+                      )}
+                    </Field>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={build}
+            disabled={busy || disabled}
+          >
+            {busy ? "Building the prompt…" : "Build the prompt"}
+          </button>
+          {disabled ? (
+            <p className="hint">
+              Fill in the required fields to build the prompt.
+            </p>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}

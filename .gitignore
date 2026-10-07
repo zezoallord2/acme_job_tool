@@ -1,0 +1,52 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# typescript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# local runtime data: uploads, exports, logs, generated files, backups
+data/
+backups/
+*.dump
+*.tar.gz
+
+# test output
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+/tests/.tmp/
+
+# environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+
+# editor / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Unrelated sibling projects in this workspace are not part of Acme Jobs.
+/acme webite/
+/my website/# bundled runtime artifacts (esbuild worker/CLI)
+dist/

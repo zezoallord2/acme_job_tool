@@ -1,0 +1,2881 @@
+// Acme Jobs â€” canonical data model
+// Three canonical objects: Career, Job, Application.
+// Everything else (evidence, claims, artifacts, learning, operations) derives from them.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum VerificationStatus {
+  VERIFIED
+  USER_CONFIRMED
+  UNVERIFIED
+  CONFLICTED
+  REJECTED
+}
+
+enum ConfidenceCategory {
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
+enum MetricStatus {
+  VERIFIED
+  USER_ESTIMATE
+  UNKNOWN
+  NOT_APPLICABLE
+}
+
+enum EvidenceSourceType {
+  EMPLOYMENT
+  EDUCATION
+  CERTIFICATION
+  PROJECT
+  VOLUNTEER
+  SKILL
+  WORK_SAMPLE
+  DOCUMENT
+  INTERVIEW_RECALL
+  USER_STATEMENT
+  OTHER
+}
+
+enum ClaimType {
+  SKILL
+  TOOL
+  ACHIEVEMENT
+  RESPONSIBILITY
+  LEADERSHIP
+  METRIC
+  EDUCATION
+  CERTIFICATION
+  EMPLOYMENT
+  DATE
+  SOFT_SKILL
+}
+
+enum ClaimVerificationState {
+  SUPPORTED
+  NEEDS_CONFIRMATION
+  UNSUPPORTED
+  CONFLICTED
+  REJECTED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProblemType {
+  MISSING
+  CONFLICTING
+}
+
+enum VerificationMethod {
+  AUTOMATIC
+  USER_ACTION
+  USER_CONFIRMATION
+  USER_REJECTION
+  USER_EDIT
+}
+
+enum ApplicationStatus {
+  SAVED
+  ANALYZING
+  READY_TO_APPLY
+  APPLIED
+  SCREENING
+  INTERVIEW
+  FINAL_INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+  ARCHIVED
+}
+
+enum EvidenceStrength {
+  STRONG
+  PARTIAL
+  MISSING
+  UNKNOWN
+}
+
+enum RequirementPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum FitClassification {
+  STRONG_FIT
+  REASONABLE_FIT
+  STRETCH
+  WEAK_FIT
+  LIKELY_SKIP
+}
+
+enum EffortLevel {
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum OpportunityRecommendation {
+  APPLY
+  REVIEW
+  LOW_PRIORITY
+  SKIP
+}
+
+enum ReadinessStatus {
+  READY
+  READY_WITH_WARNINGS
+  NOT_READY
+}
+
+enum ReadinessCheckCategory {
+  UNSUPPORTED_CLAIMS
+  DATES_CONSISTENT
+  REQUIREMENTS_REVIEWED
+  RESUME_TAILORED
+  CONTACT_COMPLETE
+  METRICS_VERIFIED
+  ANSWERS_CONSISTENT
+  CROSS_DOCUMENT_CONSISTENCY
+}
+
+enum CheckSeverity {
+  INFO
+  WARNING
+  BLOCKER
+}
+
+enum DocumentType {
+  MASTER_RESUME
+  JOB_SPECIFIC_RESUME
+  COVER_LETTER
+  APPLICATION_ANSWERS
+  LINKEDIN
+  INTERVIEW_BRIEF
+}
+
+enum ResumeTemplate {
+  STANDARD_PROFESSIONAL
+  FRESH_GRADUATE
+  CAREER_CHANGE
+}
+
+enum SectionType {
+  CONTACT
+  SUMMARY
+  SKILLS
+  EXPERIENCE
+  PROJECTS
+  EDUCATION
+  CERTIFICATIONS
+  VOLUNTEER
+  PROJECTS_EXTRA
+  ADDITIONAL
+}
+
+enum CoverLetterTone {
+  STANDARD
+  CONCISE
+  EMAIL
+}
+
+enum QuestionCategory {
+  MOTIVATION
+  COMPANY
+  SELF_INTRODUCTION
+  EXPERIENCE
+  CHALLENGE
+  SKILL
+  TEAMWORK
+  FAILURE
+  OTHER
+}
+
+enum StarCategory {
+  ACHIEVEMENT
+  LEADERSHIP
+  FAILURE
+  CONFLICT
+  TEAMWORK
+  PROBLEM_SOLVING
+  DEADLINE
+  CUSTOMER
+  LEARNING
+  INITIATIVE
+}
+
+enum InterviewMode {
+  GENERAL
+  BEHAVIORAL
+  ROLE_SPECIFIC
+  TECHNICAL
+  RESUME_BASED
+  GRADUATE
+  CAREER_CHANGE
+  MANAGERIAL
+}
+
+enum InterviewFormat {
+  PHONE
+  VIDEO
+  ONSITE
+  UNKNOWN
+}
+
+enum InterviewStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum InterviewStage {
+  SCREENING
+  FIRST
+  SECOND
+  FINAL
+  PANEL
+  UNKNOWN
+}
+
+enum DefenseVerdict {
+  DEFENSIBLE
+  PARTIALLY_SUPPORTED
+  OVERSTATED
+}
+
+enum FollowUpType {
+  THANK_YOU
+  FOLLOW_UP
+  SECOND_FOLLOW_UP
+  WITHDRAWAL
+}
+
+enum FollowUpStatus {
+  DRAFT
+  SENT
+  CANCELLED
+}
+
+enum EntitlementPlan {
+  FREE
+  COMPLETE
+}
+
+enum EntitlementStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum BillingProviderName {
+  WHOP
+  STRIPE
+  MANUAL_ADMIN
+}
+
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum AIProviderName {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+  OPENROUTER
+  LOCAL
+  MANUAL
+
+  /// Acme Jobs pays the provider bill. Included in a paid plan; subject to plan
+  /// limits. Distinct from GEMINI, which means "use the key stored on this
+  /// account" (BYOK) once one exists.
+  ACME_BASIC
+}
+
+enum AIInteractionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  VALIDATION_FAILED
+  FALLBACK_USED
+  MANUAL_AWAITING_INPUT
+  MANUAL_SUBMITTED
+}
+
+enum JobInputSource {
+  PASTE
+  UPLOAD_PDF
+  UPLOAD_DOCX
+  UPLOAD_TXT
+  MANUAL
+}
+
+enum UserGoal {
+  IMPROVE_RESUME
+  BETTER_TARGETING
+  INTERVIEW_PREP
+  ORGANIZE_APPLICATIONS
+  FULL_SYSTEM
+}
+
+enum ExperienceLevel {
+  FRESH_GRADUATE
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR
+  EXECUTIVE
+  CAREER_CHANGER
+}
+
+enum WorkArrangement {
+  REMOTE
+  HYBRID
+  ON_SITE
+  NO_PREFERENCE
+}
+
+enum OnboardingStep {
+  FIRST_NAME
+  EXPERIENCE_LEVEL
+  CURRENT_SITUATION
+  TARGET_ROLE
+  TARGET_INDUSTRY
+  CAREER_CHANGER
+  LOCATION_PREFERENCE
+  WORK_PREFERENCE
+  PRIMARY_GOAL
+  SNAPSHOT_REVIEW
+  COMPLETE
+}
+
+enum SprintTaskKind {
+  CAREER_PROFILE
+  ACHIEVEMENT_BANK
+  MASTER_RESUME
+  TARGET_ROLES
+  JOB_ANALYSIS
+  RESUME_TAILORING
+  STAR_STORIES
+  INTERVIEW_PRACTICE
+  APPLICATION_WORKFLOW
+  TRACKING
+}
+
+enum SprintTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum SprintStatus {
+  NOT_STARTED
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum SprintDayStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum NotificationType {
+  INTERVIEW_TOMORROW
+  FOLLOW_UP_DUE
+  DEADLINE_APPROACHING
+  DRAFT_UNFINISHED
+  USER_REMINDER
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  DISMISSED
+}
+
+enum BugReportStatus {
+  OPEN
+  TRIAGED
+  IN_PROGRESS
+  RESOLVED
+  WONTFIX
+  DUPLICATE
+}
+
+enum ReproductionStatus {
+  NOT_ATTEMPTED
+  REPRODUCED
+  FAILED_TO_REPRODUCE
+  NOT_APPLICABLE
+}
+
+enum RootCauseCategory {
+  DATA_INTEGRITY
+  VALIDATION
+  AUTHORIZATION
+  AI_OUTPUT
+  EXTERNAL_PROVIDER
+  CONCURRENCY
+  CONFIGURATION
+  UI
+  UNKNOWN
+}
+
+enum LearningEventType {
+  NEW_EVIDENCE_DISCOVERED
+  INTERVIEW_GAP_DISCOVERED
+  STRONG_STORY_IDENTIFIED
+  REPEATED_REJECTION_PATTERN
+  POSITIVE_RESPONSE_PATTERN
+  MISSING_SKILL_PATTERN
+  USER_FEEDBACK
+  WORKFLOW_FAILURE
+  OUTCOME_RECORDED
+  USER_PREFERENCE_SIGNAL
+}
+
+enum LearningSourceType {
+  INTERVIEW_REVIEW
+  APPLICATION_OUTCOME
+  EVIDENCE_LEDGER
+  USER_FEEDBACK
+  WORKFLOW
+  ANALYTICS
+  SYSTEM
+}
+
+enum FactAuthority {
+  OBSERVED
+  INFERRED
+  USER_CONFIRMED
+  VERIFIED
+}
+
+enum LearningActionStatus {
+  PENDING
+  ACCEPTED
+  REVIEWED
+  IGNORED
+  APPLIED
+}
+
+enum FeedbackVote {
+  HELPFUL
+  NOT_HELPFUL
+}
+
+enum FeedbackReason {
+  TOO_GENERIC
+  INCORRECT
+  UNSUPPORTED_CLAIM
+  TOO_LONG
+  TOO_SHORT
+  WRONG_TONE
+  MISSED_EVIDENCE
+}
+
+enum QueueJobState {
+  QUEUED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  DEAD
+  CANCELLED
+}
+
+enum QueueJobType {
+  DOCUMENT_PARSE
+  EXPORT_PDF
+  EXPORT_CSV
+  ANALYTICS_RECALC
+  AI_WORKFLOW
+  WEBHOOK_PROCESS
+  NOTIFICATION_DISPATCH
+  INTEGRITY_CHECK
+  DEAD_LETTER_REPLAY
+}
+
+enum SystemErrorSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum SystemErrorCategory {
+  DATABASE
+  VALIDATION
+  AUTHORIZATION
+  AUTHENTICATION
+  CONFLICT
+  RATE_LIMIT
+  AI_PROVIDER
+  EXTERNAL_SERVICE
+  FILE_IO
+  QUEUE
+  WEBHOOK
+  EXPORT
+  INTEGRITY
+  CONCURRENCY
+  CONFIGURATION
+  UNKNOWN
+}
+
+enum ResolutionStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  IGNORED
+  MUTED
+}
+
+enum CircuitState {
+  CLOSED
+  OPEN
+  HALF_OPEN
+}
+
+enum FlagState {
+  OFF
+  INTERNAL
+  PERCENT_ROLLOUT
+  ON
+}
+
+enum PromptStatus {
+  ACTIVE
+  CANDIDATE
+  RETIRED
+}
+
+enum VersionKind {
+  PROMPT
+  WORKFLOW
+  VALIDATOR
+  EVALUATION
+  RANKER
+}
+
+enum ReleaseStatus {
+  IN_PROGRESS
+  RELEASED
+  ROLLED_BACK
+  SUPERSEDED
+}
+
+enum ExperimentStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  CONCLUDED
+  ARCHIVED
+}
+
+enum ImprovementStage {
+  OBSERVE
+  MEASURE
+  PROPOSE
+  TEST
+  COMPARE
+  APPROVE
+  DEPLOY
+  MONITOR
+  ROLLBACK
+}
+
+enum OutcomeEventType {
+  SUBMITTED
+  REPLIED
+  REJECTED
+  SCREENING
+  INTERVIEW
+  OFFER
+  DECLINED
+  WITHDRAWN
+}
+
+enum RepairEnvironment {
+  LOCAL_DEV
+  TEST
+  STAGING
+}
+
+enum RepairStatus {
+  PROPOSED
+  APPLIED
+  TEST_PASSED
+  VERIFIED
+  REJECTED
+  BLOCKED
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum HealthState {
+  HEALTHY
+  DEGRADED
+  UNAVAILABLE
+}
+
+enum TaskPriorityAction {
+  DO
+  OPTIONAL
+  SKIP
+}
+
+// ---------------------------------------------------------------------------
+// Identity, tenancy, entitlements
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified DateTime?
+  // Null for OAuth-only accounts. Never selected by application code.
+  passwordHash  String?
+  name          String?
+  isAdmin       Boolean  @default(false)
+  isInternal    Boolean  @default(false)
+  suspendedAt   DateTime?
+  deletedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  settings      UserSettings?
+  profile       UserProfile?
+  entitlements  Entitlement[]
+  onboardings   OnboardingProgress[]
+
+  careerProfile CareerMasterProfile?
+  employments   EmploymentRecord[]
+  educations    EducationRecord[]
+  certifications Certification[]
+  skills        Skill[]
+  projects      Project[]
+  volunteers    VolunteerExperience[]
+  languages     LanguageRecord[]
+  awards        AwardRecord[]
+  narrative     CareerNarrative[]
+  voiceProfiles VoiceProfile[]
+  evidence      Evidence[]
+  evidenceConflicts EvidenceConflict[]
+  achievements  Achievement[]
+  targetRoles   TargetRole[]
+  careerFacts   CareerFactRecord[]
+  generatedClaims GeneratedClaim[]
+  evidenceMatches EvidenceMatch[]
+
+  jobs          JobPosting[]
+  jobAnalyses   JobAnalysis[]
+  evidenceMatrices EvidenceMatrix[]
+  applications  Application[]
+  resumes       Resume[]
+  coverLetters  CoverLetter[]
+  appAnswers    ApplicationAnswer[]
+  starStories   StarStory[]
+  interviews    Interview[]
+  interviewSessions InterviewSession[]
+  followUps     FollowUp[]
+  sprints       Sprint[]
+  aiInteractions AIInteraction[]
+
+  statusEvents ApplicationStatusEvent[]
+  applicationArtifacts ApplicationArtifact[]
+  applicationSnapshots ApplicationSnapshot[]
+  applicationNotes ApplicationNote[]
+  readinessChecks ReadinessCheck[]
+  learningEvents LearningEvent[]
+  distilledPatterns DistilledPattern[]
+  evidenceProposals EvidenceProposal[]
+  applicationOutcomes ApplicationOutcome[]
+  preferenceSignals UserPreferenceSignal[]
+  systemErrors   SystemError[]
+  traceRecords   TraceRecord[]
+  versionedArtifacts VersionedArtifact[]
+  interviewAnswers InterviewAnswer[]
+  resumeBullets  ResumeBullet[]
+  feedback       AIInteractionFeedback[]
+  notifications  Notification[]
+  bugReports     BugReport[]
+  integrations   UserIntegration[]
+  auditLogs      AuditLog[]
+  requests       RateLimitBucket[]
+  dataExports   DataExportRequest[]
+  apiKeys       UserApiKey[]
+  idempotencyKeys IdempotencyKey[]
+  workItems      WorkQueueItem[]
+  sessions       Session[]
+
+  @@index([deletedAt])
+  @@index([isAdmin])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+  ipHash       String?
+  userAgent    String?
+  revokedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  theme             ThemePreference   @default(SYSTEM)
+  locale            String            @default("en")
+  timezone          String            @default("UTC")
+  aiProvider        AIProviderName    @default(MANUAL)
+  aiModel           String?
+  analyticsEnabled  Boolean           @default(false)
+  productLearningEnabled Boolean      @default(true)
+
+  notifyInterviews  Boolean @default(true)
+  notifyFollowUps   Boolean @default(true)
+  notifyDeadlines   Boolean @default(true)
+  notifyDrafts      Boolean @default(false)
+  notifyReminders   Boolean @default(true)
+
+  reduceMotion      Boolean @default(false)
+  autosaveEnabled   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  firstName       String?
+  lastName        String?
+  phone           String?
+  email           String?
+  locationCity    String?
+  locationCountry String?
+  linkedinUrl     String?
+  portfolioUrl    String?
+  websiteUrl      String?
+  headline        String?
+  summary         String?
+  workArrangement WorkArrangement @default(NO_PREFERENCE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model OnboardingProgress {
+  id     String @id @default(cuid())
+  userId String
+
+  step               OnboardingStep @default(FIRST_NAME)
+  firstName          String?
+  experienceLevel    ExperienceLevel?
+  currentSituation   String?
+  targetRole         String?
+  targetIndustry     String?
+  isCareerChanger    Boolean?
+  locationPreference String?
+  workArrangement    WorkArrangement?
+  primaryGoal        UserGoal?
+  snapshotCreatedAt  DateTime?
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Entitlement {
+  id       String          @id @default(cuid())
+  userId   String
+  plan     EntitlementPlan
+  status   EntitlementStatus @default(ACTIVE)
+
+  source        BillingProviderName @default(MANUAL_ADMIN)
+  externalEventId String?
+  externalCustomerId String?
+  externalSubscriptionId String?
+
+  startsAt   DateTime  @default(now())
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Idempotent grant: the same external event can only ever grant once.
+  @@unique([source, externalEventId])
+  @@index([userId, status])
+}
+
+model UserIntegration {
+  id     String @id @default(cuid())
+  userId String
+
+  provider      BillingProviderName
+  externalUserId String
+  externalEmail  String?
+  rawSummary    Json?
+  lastSyncedAt  DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalUserId])
+  @@index([userId])
+}
+
+model UserApiKey {
+  id     String @id @default(cuid())
+  userId String
+
+  provider   AIProviderName
+  label      String?
+  // Never returned by any API. Stored encrypted.
+  encryptedKey Bytes
+  keyHint    String
+  keyStatus  KeyStatus           @default(ACTIVE)
+  lastUsedAt DateTime?
+  lastErrorAt DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, keyStatus])
+}
+
+enum KeyStatus {
+  ACTIVE
+  DISABLED
+  ERRORING
+}
+
+model AuditLog {
+  id      String @id @default(cuid())
+  userId  String?
+  action  String
+  entity  String
+  entityId String?
+  outcome String
+  traceId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([traceId])
+}
+
+model RateLimitBucket {
+  id     String @id @default(cuid())
+  userId String?
+  key    String
+  windowStart DateTime
+  count  Int      @default(0)
+  limitValue Int
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([key, windowStart])
+  @@index([windowStart])
+}
+
+// ---------------------------------------------------------------------------
+// CAREER â€” what is factually true about the user
+// ---------------------------------------------------------------------------
+
+model CareerMasterProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  targetRolePrimary   String?
+  targetRoleSecondary String?
+  targetIndustry      String?
+  yearsExperience     Float?
+  isCareerChanger     Boolean  @default(false)
+  careerChangeFrom    String?
+  careerChangeTo      String?
+  currentSituation    String?
+  primaryGoal         UserGoal?
+
+  headline        String?
+  professionalSummary String?
+  openToWork       Boolean @default(true)
+  availableFrom    DateTime?
+
+  completenessPercent Int    @default(0)
+  version          Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmploymentRecord {
+  id     String @id @default(cuid())
+  userId String
+
+  companyName     String
+  jobTitle        String
+  employmentType  String?
+  location        String?
+  startDate       DateTime?
+  endDate         DateTime?
+  isCurrent       Boolean  @default(false)
+  description     String?
+  highlights      String[]
+  verification    VerificationStatus @default(USER_CONFIRMED)
+  sortOrder       Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence  Evidence[]
+
+  @@index([userId, startDate])
+}
+
+model EducationRecord {
+  id     String @id @default(cuid())
+  userId String
+
+  institution   String
+  degree        String?
+  fieldOfStudy  String?
+  startDate     DateTime?
+  endDate       DateTime?
+  grade         String?
+  description   String?
+  verification VerificationStatus @default(USER_CONFIRMED)
+  sortOrder     Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence  Evidence[]
+
+  @@index([userId])
+}
+
+model Certification {
+  id     String @id @default(cuid())
+  userId String
+
+  name          String
+  issuer        String?
+  issuedDate    DateTime?
+  expiresAt     DateTime?
+  credentialId  String?
+  url           String?
+  isMandatoryForAnyRole Boolean @default(false)
+  verification  VerificationStatus @default(USER_CONFIRMED)
+  sortOrder     Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence  Evidence[]
+
+  @@index([userId])
+}
+
+model Skill {
+  id     String @id @default(cuid())
+  userId String
+
+  name           String
+  category       String?
+  proficiencyLevel Int?
+  yearsUsed      Float?
+  isCore         Boolean @default(false)
+  verification   VerificationStatus @default(USER_CONFIRMED)
+  sortOrder      Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence  Evidence[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Project {
+  id     String @id @default(cuid())
+  userId String
+
+  name        String
+  description String?
+  role        String?
+  techStack   String[]
+  startDate   DateTime?
+  endDate     DateTime?
+  url         String?
+  outcomes    String?
+  verification VerificationStatus @default(USER_CONFIRMED)
+  sortOrder   Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence  Evidence[]
+  achievements Achievement[]
+
+  @@index([userId])
+}
+
+model VolunteerExperience {
+  id     String @id @default(cuid())
+  userId String
+
+  organization String
+  role         String?
+  startDate    DateTime?
+  endDate      DateTime?
+  description  String?
+  verification VerificationStatus @default(USER_CONFIRMED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence  Evidence[]
+
+  @@index([userId])
+}
+
+model LanguageRecord {
+  id     String @id @default(cuid())
+  userId String
+
+  name        String
+  proficiency String?
+  verification VerificationStatus @default(USER_CONFIRMED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AwardRecord {
+  id     String @id @default(cuid())
+  userId String
+
+  title       String
+  issuer      String?
+  date        DateTime?
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CareerNarrative {
+  id     String @id @default(cuid())
+  userId String
+
+  version Int     @default(1)
+  title   String
+  originPoint    String?
+  bridgeSteps     String[]
+  destinationRole String?
+  targetIndustry  String?
+  coreTheme       String?
+  narrativeText   String
+  isActive        Boolean  @default(true)
+  userConfirmed   Boolean  @default(false)
+  evidenceIds     String[]
+  metadata        Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+}
+
+model VoiceProfile {
+  id     String @id @default(cuid())
+  userId String
+
+  version Int @default(1)
+
+  isDirect        Boolean @default(false)
+  isConcise       Boolean @default(false)
+  isFormal        Boolean @default(false)
+  isConversational Boolean @default(false)
+  isTechnical     Boolean @default(false)
+  isSimple        Boolean @default(false)
+
+  avgSentenceLength Float?
+  sampleCount       Int      @default(0)
+  bannedPhrases     String[]
+  preferredPhrases  String[]
+  samples           Json?
+  notes             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// EVIDENCE LEDGER â€” core differentiator
+// ---------------------------------------------------------------------------
+
+model Evidence {
+  id     String @id @default(cuid())
+  userId String
+
+  statement        String
+  claimType        ClaimType
+  sourceType       EvidenceSourceType
+  sourceEntityId   String?
+  sourceDescription String
+
+  verificationStatus VerificationStatus   @default(UNVERIFIED)
+  confidenceCategory ConfidenceCategory   @default(UNKNOWN)
+  authority          FactAuthority        @default(INFERRED)
+
+  metricValue  Float?
+  metricUnit   String?
+  metricStatus MetricStatus @default(NOT_APPLICABLE)
+
+  dateRangeStart DateTime?
+  dateRangeEnd   DateTime?
+  lastConfirmedAt DateTime?
+  lastUsedAt     DateTime?
+  usageCount     Int      @default(0)
+
+  tags        String[]
+  revision    Int      @default(1)
+  createdBy   String   @default("user")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employment    EmploymentRecord?    @relation(fields: [employmentId], references: [id], onDelete: SetNull)
+  employmentId  String?
+  education     EducationRecord?     @relation(fields: [educationId], references: [id], onDelete: SetNull)
+  educationId   String?
+  certification Certification?       @relation(fields: [certificationId], references: [id], onDelete: SetNull)
+  certificationId String?
+  project       Project?             @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId     String?
+  volunteer     VolunteerExperience? @relation(fields: [volunteerId], references: [id], onDelete: SetNull)
+  volunteerId   String?
+  skill         Skill?               @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  skillId       String?
+
+  sources        EvidenceSource[]
+  conflicts      EvidenceConflict[]
+  matches        EvidenceMatch[]
+  claims         ClaimEvidenceLink[]
+  records        CareerFactRecord[]
+
+  @@index([userId, verificationStatus])
+  @@index([userId, claimType])
+  @@index([userId, sourceType])
+  @@index([userId, lastConfirmedAt])
+}
+
+model CareerFactRecord {
+  id     String @id @default(cuid())
+  userId String
+
+  category     String
+  label        String
+  value        String?
+  numericValue Float?
+  unit         String?
+  verification VerificationStatus @default(USER_CONFIRMED)
+  confidence   ConfidenceCategory @default(MEDIUM)
+  metricStatus MetricStatus       @default(NOT_APPLICABLE)
+  statusLabel  String            @default("USER_CONFIRMED")
+
+  evidenceId String?
+  evidence   Evidence? @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
+  metadata   Json?
+  sortOrder  Int        @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+}
+
+model EvidenceSource {
+  id         String @id @default(cuid())
+  evidenceId String
+
+  kind            EvidenceSourceType
+  label           String
+  locator         String?
+  capturedAt      DateTime @default(now())
+  excerpt         String?
+  verification    VerificationStatus @default(UNVERIFIED)
+
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId])
+}
+
+model EvidenceConflict {
+  id     String @id @default(cuid())
+  userId String
+
+  type        ProblemType
+  field       String
+  description String
+  entityAId   String?
+  entityBId   String?
+  valueA      String?
+  valueB      String?
+  severity    RiskLevel @default(MEDIUM)
+  status      ResolutionStatus @default(OPEN)
+
+  resolvedAt  DateTime?
+  resolvedNote String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence Evidence? @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  evidenceId String?
+
+  @@index([userId, status])
+}
+
+model Achievement {
+  id     String @id @default(cuid())
+  userId String
+
+  title        String
+  context      String?
+  challenge    String?
+  actions      String[]
+  result       String?
+  metricValue  Float?
+  metricUnit   String?
+  metricStatus MetricStatus @default(UNKNOWN)
+
+  skills       String[]
+  tools        String[]
+  evidenceIds  String[]
+  verification VerificationStatus @default(UNVERIFIED)
+  confidence   ConfidenceCategory @default(UNKNOWN)
+  starred      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?
+
+  bullets ResumeBullet[]
+  resumes Resume[]
+
+  @@index([userId, verification])
+  @@index([userId, starred])
+}
+
+model TargetRole {
+  id     String @id @default(cuid())
+  userId String
+
+  title        String
+  industry     String?
+  seniority    String?
+  description  String?
+  mustHaveSkills  String[]
+  preferredSkills String[]
+  isPrimary    Boolean @default(false)
+  archivedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidenceMatrices EvidenceMatrix[]
+  applications Application[]
+  jobPostings JobPosting[]
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// JOB â€” what the employer requires
+// ---------------------------------------------------------------------------
+
+model JobPosting {
+  id     String @id @default(cuid())
+  userId String
+
+  title        String?
+  company      String?
+  location     String?
+  workArrangement WorkArrangement?
+  salaryMin    Int?
+  salaryMax    Int?
+  currency     String?
+  sourceUrl    String?
+  sourceName   String?
+  inputSource  JobInputSource @default(PASTE)
+  fileName     String?
+  fileMime     String?
+  fileSizeBytes Int?
+
+  rawDescription String
+  descriptionHash String
+  wordCount      Int   @default(0)
+  isArchived     Boolean @default(false)
+
+  deadlineAt   DateTime?
+  appliedAt    DateTime?
+  contactName  String?
+  contactEmail String?
+  recruiterName String?
+
+  analysis JobAnalysis?
+  application Application?
+  interviewPlan Interview?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matrices  EvidenceMatrix[]
+  resumes   Resume[]
+  targetRole TargetRole?    @relation(fields: [targetRoleId], references: [id], onDelete: SetNull)
+  targetRoleId String?
+
+  @@index([userId, createdAt])
+  @@index([userId, company])
+  @@index([descriptionHash])
+}
+
+model JobAnalysis {
+  id     String @id @default(cuid())
+  userId String
+  jobId  String @unique
+
+  role        String?
+  company     String?
+  seniority   String?
+  summary     String?
+
+  mustHaveRequirements String[]
+  preferredRequirements String[]
+  responsibilities      String[]
+  hardSkills            String[]
+  softSkills            String[]
+  tools                 String[]
+  educationRequirements String[]
+  certificationRequirements String[]
+  experienceRequirement String?
+  repeatedThemes        String[]
+  importantLanguage     String[]
+  dealBreakers          String[]
+
+  rawResult  Json?
+  confidence ConfidenceCategory @default(MEDIUM)
+  warnings   String[]
+
+  workflowId String
+  promptVersion String
+  provider   AIProviderName
+  model      String
+  validatorVersion String
+  evaluationVersion String?
+  interactionId String?
+  manualMode Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job    JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  requirements JobRequirement[]
+
+  @@index([userId])
+}
+
+model JobRequirement {
+  id     String @id @default(cuid())
+  jobAnalysisId String
+
+  text          String
+  normalizedKey String
+  priority      RequirementPriority @default(MEDIUM)
+  isMustHave    Boolean  @default(false)
+  evidenceBasis String?
+  notes         String?
+  orderIndex    Int      @default(0)
+
+  analysis    JobAnalysis   @relation(fields: [jobAnalysisId], references: [id], onDelete: Cascade)
+  matches     EvidenceMatch[]
+
+  @@index([jobAnalysisId])
+  @@index([normalizedKey])
+}
+
+model EvidenceMatrix {
+  id     String @id @default(cuid())
+  userId String
+  jobId  String
+  applicationId String? @unique
+
+  coverageStrong  Int @default(0)
+  coveragePartial Int @default(0)
+  coverageMissing Int @default(0)
+  coverageUnknown Int @default(0)
+  coveragePercent Float @default(0)
+
+  fitClassification FitClassification @default(STRETCH)
+  recommendation   OpportunityRecommendation @default(REVIEW)
+  tailoringEffort  EffortLevel @default(MEDIUM)
+  explanation      String
+  criticalGaps     String[]
+  strongSignals    String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job        JobPosting      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  targetRole TargetRole?     @relation(fields: [targetRoleId], references: [id], onDelete: SetNull)
+  targetRoleId String?
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  matches    EvidenceMatch[]
+
+  @@unique([userId, jobId])
+  @@index([userId, fitClassification])
+}
+
+model EvidenceMatch {
+  id     String @id @default(cuid())
+  userId String
+
+  matrixId      String
+  requirementId String
+  evidenceId    String?
+
+  strength        EvidenceStrength
+  priority        RequirementPriority @default(MEDIUM)
+  matchBasis      String
+  confidence      ConfidenceCategory @default(MEDIUM)
+  recommendedAction String
+  isDealBreaker   Boolean @default(false)
+  explanation     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matrix      EvidenceMatrix @relation(fields: [matrixId], references: [id], onDelete: Cascade)
+  requirement JobRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  evidence    Evidence?      @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
+
+  @@unique([matrixId, requirementId])
+  @@index([userId, strength])
+}
+
+// ---------------------------------------------------------------------------
+// GENERATED CLAIMS â€” provenance for every AI-produced assertion
+// ---------------------------------------------------------------------------
+
+model GeneratedClaim {
+  id     String @id @default(cuid())
+  userId String
+
+  claimText      String
+  claimType      ClaimType
+  verificationState ClaimVerificationState
+  riskLevel      RiskLevel @default(LOW)
+  explanation    String
+
+  generationId   String
+  artifactType   String
+  artifactId     String?
+
+  interactionId  String?
+  workflowId     String?
+  promptVersion  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links  ClaimEvidenceLink[]
+  bullet ResumeBullet?
+
+  @@index([userId, verificationState])
+  @@index([artifactType, artifactId])
+  @@index([generationId])
+}
+
+model ClaimEvidenceLink {
+  id     String @id @default(cuid())
+  claimId String
+  evidenceId String
+
+  relation String
+  weight   Float @default(1)
+
+  claim    GeneratedClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  evidence Evidence       @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([claimId, evidenceId])
+  @@index([evidenceId])
+}
+
+// ---------------------------------------------------------------------------
+// APPLICATION â€” exactly what the user submitted
+// ---------------------------------------------------------------------------
+
+model Application {
+  id     String @id @default(cuid())
+  userId String
+
+  jobId  String? @unique
+  status ApplicationStatus @default(SAVED)
+
+  priority      OpportunityRecommendation @default(REVIEW)
+  userPriority  Int       @default(3)
+  fitClassification FitClassification?
+  effort        EffortLevel?
+  dueAt         DateTime?
+  appliedAt     DateTime?
+  closedAt      DateTime?
+  rejectionStage String?
+  rejectionReason String?
+
+  nextAction    String?
+  nextActionDue DateTime?
+  contactName   String?
+  contactEmail  String?
+  contactRole   String?
+  source        String?
+  location      String?
+  salaryNote    String?
+
+  version Int @default(1) // optimistic concurrency
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job        JobPosting? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  targetRole TargetRole? @relation(fields: [targetRoleId], references: [id], onDelete: SetNull)
+  targetRoleId String?
+
+  statusEvents   ApplicationStatusEvent[]
+  artifacts      ApplicationArtifact[]
+  snapshots      ApplicationSnapshot[]
+  answers        ApplicationAnswer[]
+  coverLetters   CoverLetter[]
+  resumes        Resume[]
+  interviews     Interview[]
+  followUps      FollowUp[]
+  readinessChecks ReadinessCheck[]
+  matrix         EvidenceMatrix?
+  outcomes       ApplicationOutcome[]
+  notes          ApplicationNote[]
+  learningEvents LearningEvent[]
+
+  @@index([userId, status])
+  @@index([userId, appliedAt])
+  @@index([userId, nextActionDue])
+}
+
+model ApplicationStatusEvent {
+  id     String @id @default(cuid())
+  userId String
+  applicationId String
+
+  fromStatus ApplicationStatus?
+  toStatus   ApplicationStatus
+  reason     String?
+  actorType  String  @default("user")
+  traceId    String?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ApplicationArtifact {
+  id     String @id @default(cuid())
+  userId String
+  applicationId String
+
+  type       DocumentType
+  label      String
+  content    Json
+  contentHash String
+  sourceId   String?
+  version    Int    @default(1)
+  isCurrent  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, type, isCurrent])
+}
+
+model ApplicationSnapshot {
+  id     String @id @default(cuid())
+  userId String
+  applicationId String
+
+  label        String
+  jobDescription String
+  jobAnalysis  Json
+  evidenceMatrix Json
+  resumeContent Json
+  coverLetterContent Json?
+  answers      Json
+  evidenceState Json
+  contactInfo  Json?
+
+  // Deterministic hash of every snapshotted field. Immutability is enforced
+  // in code; this hash makes any mutation detectable.
+  contentHash String
+  isImmutable Boolean @default(true)
+  sealedAt     DateTime @default(now())
+
+  applicationStatus ApplicationStatus
+  createdAt DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model ApplicationNote {
+  id     String @id @default(cuid())
+  userId String
+  applicationId String
+
+  body      String
+  kind      String @default("NOTE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+}
+
+model ReadinessCheck {
+  id     String @id @default(cuid())
+  userId String
+  applicationId String
+
+  category  ReadinessCheckCategory
+  label     String
+  status    CheckSeverity
+  blocking  Boolean @default(false)
+  detail    String
+  evidenceRefs String[]
+
+  createdAt DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+// ---------------------------------------------------------------------------
+// RESUMES
+// ---------------------------------------------------------------------------
+
+model Resume {
+  id     String @id @default(cuid())
+  userId String
+
+  label      String
+  template   ResumeTemplate @default(STANDARD_PROFESSIONAL)
+  isMaster   Boolean @default(false)
+  parentId   String?
+
+  jobId      String?
+  applicationId String?
+
+  currentVersion Int @default(1)
+  isArchived     Boolean @default(false)
+
+  generationId  String?
+  promptVersion String?
+  workflowId    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job      JobPosting?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  application Application?   @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  achievement Achievement?   @relation(fields: [achievementId], references: [id], onDelete: SetNull)
+  achievementId String?
+
+  versions    ResumeVersion[]
+  sections    ResumeSection[]
+  bullets     ResumeBullet[]
+  coverLetters CoverLetter[]
+  parent      Resume?        @relation("ResumeLineage", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Resume[]       @relation("ResumeLineage")
+
+  @@index([userId, isMaster])
+  @@index([userId, jobId])
+}
+
+model ResumeVersion {
+  id     String @id @default(cuid())
+  resumeId String
+
+  version   Int
+  content   Json
+  contentHash String
+  summary   String?
+  label     String?
+  isSent    Boolean @default(false)
+
+  generationId String?
+  promptVersion String?
+  workflowId   String?
+  interactionId String?
+
+  createdAt DateTime @default(now())
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, version])
+  @@index([resumeId, isSent])
+}
+
+model ResumeSection {
+  id     String @id @default(cuid())
+  resumeId String
+
+  type   SectionType
+  title  String
+  orderIndex Int    @default(0)
+  content Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, type])
+}
+
+model ResumeBullet {
+  id     String @id @default(cuid())
+  userId String
+  resumeId String
+
+  achievementId String?
+  claimId    String? @unique
+  evidenceIds String[]
+
+  text          String
+  originalText  String?
+  defenseVerdict DefenseVerdict?
+  defenseNotes  String?
+
+  state         ClaimVerificationState @default(NEEDS_CONFIRMATION)
+  isAccepted    Boolean @default(false)
+  isRejected    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resume      Resume      @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement? @relation(fields: [achievementId], references: [id], onDelete: SetNull)
+  claim       GeneratedClaim? @relation(fields: [claimId], references: [id], onDelete: SetNull)
+
+  @@index([userId, state])
+  @@index([resumeId])
+}
+
+// ---------------------------------------------------------------------------
+// COVER LETTERS / ANSWERS / STAR / INTERVIEWS
+// ---------------------------------------------------------------------------
+
+model CoverLetter {
+  id     String @id @default(cuid())
+  userId String
+
+  applicationId String?
+  resumeId      String?
+  achievementIds String[]
+
+  tone         CoverLetterTone @default(STANDARD)
+  body         String
+  content      Json
+  contentHash  String
+  version      Int    @default(1)
+  isCurrent    Boolean @default(true)
+
+  generationId String?
+  promptVersion String?
+  workflowId   String?
+  interactionId String?
+  evidenceIds  String[]
+  warnings     String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  resume      Resume?       @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+}
+
+model ApplicationAnswer {
+  id     String @id @default(cuid())
+  userId String
+  applicationId String?
+
+  question     String
+  category     QuestionCategory @default(OTHER)
+  answer       String
+  isReusable   Boolean @default(false)
+  blockName    String?
+  evidenceIds  String[]
+  warnings     String[]
+  version      Int @default(1)
+
+  generationId String?
+  promptVersion String?
+  workflowId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, category])
+  @@index([applicationId])
+}
+
+model StarStory {
+  id     String @id @default(cuid())
+  userId String
+
+  title    String
+  category StarCategory
+
+  situation String
+  task      String
+  action    String
+  result    String
+  learning  String?
+
+  evidenceIds String[]
+  achievementIds String[]
+  skills      String[]
+  verification VerificationStatus @default(USER_CONFIRMED)
+  strength     EvidenceStrength @default(UNKNOWN)
+  usageCount   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+}
+
+model Interview {
+  id     String @id @default(cuid())
+  userId String
+
+  applicationId String?
+  jobId         String? @unique
+
+  company   String
+  role      String
+  stage     InterviewStage @default(UNKNOWN)
+  format    InterviewFormat @default(UNKNOWN)
+  scheduledAt DateTime?
+  durationMinutes Int?
+  interviewerName String?
+  interviewerRole String?
+  location  String?
+
+  notes         String?
+  prepNotes     String?
+  questionsToAsk String[]
+  checklist     Json?
+  risks         String[]
+  gaps          String[]
+  status        InterviewStatus @default(NOT_STARTED)
+
+  postReview    Json?
+  reviewedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  job         JobPosting?   @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  sessions    InterviewSession[]
+  followUps   FollowUp[]
+
+  @@index([userId, scheduledAt])
+}
+
+model InterviewSession {
+  id     String @id @default(cuid())
+  userId String
+  interviewId String? @unique
+
+  mode       InterviewMode @default(GENERAL)
+  status     InterviewStatus @default(NOT_STARTED)
+  targetRole String?
+  questionLimit Int          @default(5)
+  questionsAsked Int         @default(0)
+  overallScore Float?
+  summary     String?
+
+  generationId String?
+  promptVersion String?
+  workflowId   String?
+  interactionId String?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interview Interview? @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  questions InterviewQuestion[]
+  answers   InterviewAnswer[]
+
+  @@index([userId, createdAt])
+}
+
+model InterviewQuestion {
+  id     String @id @default(cuid())
+  sessionId String
+
+  orderIndex   Int
+  question     String
+  category     InterviewMode
+  rationale    String?
+  expectedSignals String[]
+  followUpAsked  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answers  InterviewAnswer[]
+
+  @@unique([sessionId, orderIndex])
+}
+
+model InterviewAnswer {
+  id     String @id @default(cuid())
+  userId String
+  sessionId String
+  questionId String
+
+  transcript String
+  durationSeconds Int?
+
+  relevanceScore Float?
+  specificityScore Float?
+  evidenceScore   Float?
+  structureScore  Float?
+  clarityScore    Float?
+  totalScore      Float?
+
+  unsupportedClaims String[]
+  followUpQuestion  String?
+  coachNote         String?
+  wasVague          Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session  InterviewSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question InterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model FollowUp {
+  id     String @id @default(cuid())
+  userId String
+
+  applicationId String?
+  interviewId   String?
+
+  type     FollowUpType
+  status   FollowUpStatus @default(DRAFT)
+  subject  String?
+  body     String
+  scheduledFor DateTime?
+  sentAt   DateTime?
+
+  generationId String?
+  promptVersion String?
+  workflowId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  interview   Interview?   @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, scheduledFor])
+}
+
+model Sprint {
+  id     String @id @default(cuid())
+  userId String
+
+  title    String
+  status   SprintStatus @default(NOT_STARTED)
+  startDate DateTime
+  endDate   DateTime
+  currentDay Int        @default(1)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days  SprintDay[]
+  tasks SprintTask[]
+
+  @@index([userId, status])
+}
+
+model SprintDay {
+  id     String @id @default(cuid())
+  sprintId String
+
+  dayNumber  Int
+  title      String
+  focus      String?
+  status     SprintDayStatus @default(PENDING)
+  minutesTarget Int          @default(45)
+  completedAt DateTime?
+
+  sprint Sprint      @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  tasks  SprintTask[]
+
+  @@unique([sprintId, dayNumber])
+}
+
+model SprintTask {
+  id     String @id @default(cuid())
+  userId String
+  sprintId String
+  sprintDayId String?
+
+  kind        SprintTaskKind
+  title       String
+  description String?
+  status      SprintTaskStatus @default(PENDING)
+  orderIndex  Int      @default(0)
+  completedAt DateTime?
+  skippedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sprint    Sprint     @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  sprintDay SprintDay? @relation(fields: [sprintDayId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+}
+
+// ---------------------------------------------------------------------------
+// AI â€” interactions, versions, prompts, feedback, evaluations
+// ---------------------------------------------------------------------------
+
+model AIInteraction {
+  id     String @id @default(cuid())
+  userId String
+
+  workflowId String
+  promptVersion String?
+  provider  AIProviderName @default(MANUAL)
+  model     String?
+  validatorVersion String @default("v1")
+  evaluationVersion String?
+
+  status    AIInteractionStatus @default(PENDING)
+  errorCategory SystemErrorCategory?
+  errorCode String?
+  attempts  Int     @default(0)
+  retryCount Int    @default(0)
+
+  // Sanitized: contains shapes, ids and counts. Never raw private content by default.
+  inputSummary  Json?
+  outputSummary Json?
+  rawInputHash  String?
+  fallbackProvider AIProviderName?
+  fallbackUsed   Boolean @default(false)
+  traceId       String?
+  durationMs    Int?
+
+  createdAt DateTime @default(now())
+  completedAt DateTime?
+  updatedAt DateTime @updatedAt
+
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback   AIInteractionFeedback[]
+  evaluations AIEvaluationResult[]
+
+  @@index([userId, workflowId, createdAt])
+  @@index([status])
+}
+
+model AIInteractionFeedback {
+  id     String @id @default(cuid())
+  userId String
+  interactionId String
+
+  vote    FeedbackVote
+  reasons FeedbackReason[]
+  comment String?
+  context String?
+
+  createdAt DateTime @default(now())
+
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interaction AIInteraction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  @@index([interactionId])
+  @@index([userId, createdAt])
+}
+
+model VersionedArtifact {
+  id     String @id @default(cuid())
+  userId String?
+
+  kind        VersionKind
+  identifier   String
+  version     Int
+  status      PromptStatus @default(ACTIVE)
+  contentHash String
+  content     Json
+  notes       String?
+  parentId    String?
+
+  promotedAt  DateTime?
+  retiredAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([kind, identifier, version])
+  @@index([kind, identifier, status])
+}
+
+model AIEvaluationFixture {
+  id     String @id @default(cuid())
+  slug   String @unique
+  scenario String
+  payload Json
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+}
+
+model AIEvaluationRun {
+  id     String @id @default(cuid())
+  version   String
+  evaluationVersion String
+  promptVersion String
+  fixtureCount Int
+  metrics   Json
+  passed    Boolean
+  createdAt DateTime @default(now())
+
+  results AIEvaluationResult[]
+}
+
+model AIEvaluationResult {
+  id     String @id @default(cuid())
+  runId String
+  fixtureId String
+  interactionId String?
+
+  metrics Json
+  passed  Boolean
+  details Json?
+
+  createdAt DateTime @default(now())
+
+  run         AIEvaluationRun    @relation(fields: [runId], references: [id], onDelete: Cascade)
+  interaction AIInteraction?     @relation(fields: [interactionId], references: [id], onDelete: SetNull)
+
+  @@index([runId])
+}
+
+model PromptCandidate {
+  id     String @id @default(cuid())
+  identifier   String
+  version      Int
+  status       PromptStatus @default(CANDIDATE)
+  content      Json
+  contentHash  String
+  rationale    String?
+  basedOnVersion Int?
+
+  evaluationVersion String?
+  metrics       Json?
+  approvedAt   DateTime?
+  approvedBy   String?
+  deployedAt   DateTime?
+  rolledBackAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([identifier, version])
+  @@index([identifier, status])
+}
+
+// ---------------------------------------------------------------------------
+// LEARNING â€” events, distilled patterns, proposals
+// ---------------------------------------------------------------------------
+
+model LearningEvent {
+  id     String @id @default(cuid())
+  userId String
+
+  sourceType LearningSourceType
+  sourceId   String?
+  eventType  LearningEventType
+  observation String
+  confidenceCategory ConfidenceCategory @default(MEDIUM)
+  supportingData Json?
+
+  // Deterministic dedupe key: repeated observations increment instead of duplicating.
+  dedupeKey String
+
+  occurrenceCount Int     @default(1)
+  firstObservedAt DateTime @default(now())
+  lastObservedAt  DateTime @default(now())
+
+  acceptedByUser Boolean  @default(false)
+  actionStatus   LearningActionStatus @default(PENDING)
+  actedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String?
+  distills   DistilledPattern[]
+  actions    EvidenceProposal[]
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, eventType])
+  @@index([userId, createdAt])
+}
+
+model DistilledPattern {
+  id     String @id @default(cuid())
+  userId String?
+
+  category   String
+  statement  String
+  evidence   String[]
+  sampleSize Int      @default(0)
+  metricName String?
+  metricValue Float?
+  confidence ConfidenceCategory @default(LOW)
+  sufficiencyNote String?
+  causalClaim Boolean @default(false)
+
+  sourceEventIds String[]
+  evidenceIds    String[]
+
+  validUntil DateTime?
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  learningEvent LearningEvent? @relation(fields: [learningEventId], references: [id], onDelete: SetNull)
+  learningEventId String?
+
+  @@index([userId, category])
+}
+
+model EvidenceProposal {
+  id     String @id @default(cuid())
+  userId String
+
+  learningEventId String?
+  proposedStatement String
+  claimType     ClaimType
+  sourceType    EvidenceSourceType
+  sourceDescription String
+  metricValue   Float?
+  metricUnit    String?
+  confidence    ConfidenceCategory @default(LOW)
+
+  status LearningActionStatus @default(PENDING)
+  appliedEvidenceId String?
+  actedAt DateTime?
+  userNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learningEvent LearningEvent? @relation(fields: [learningEventId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+}
+
+model ApplicationOutcome {
+  id     String @id @default(cuid())
+  userId String
+  applicationId String
+
+  type       OutcomeEventType
+  occurredAt DateTime @default(now())
+  detail     String?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([applicationId])
+}
+
+model UserPreferenceSignal {
+  id     String @id @default(cuid())
+  userId String
+
+  key   String
+  value String
+  weight Float @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key, value])
+}
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+
+  type    NotificationType
+  title   String
+  body    String
+  href    String?
+  dueAt   DateTime?
+  status  NotificationStatus @default(UNREAD)
+  dedupeKey String
+
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, status, dueAt])
+}
+
+// ---------------------------------------------------------------------------
+// OPERATIONS â€” errors, traces, jobs, DLQ, flags, releases, bugs, repair
+// ---------------------------------------------------------------------------
+
+model SystemError {
+  id     String @id @default(cuid())
+  traceId String?
+
+  severity   SystemErrorSeverity
+  category   SystemErrorCategory
+  code       String
+  message    String
+  affectedWorkflow String?
+  service    String  @default("acme-jobs")
+  sanitizedContext Json?
+  retryCount Int     @default(0)
+
+  userId    String?
+  resolutionStatus ResolutionStatus @default(OPEN)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  resolvedAt  DateTime?
+  resolutionNote String?
+  bugReportId  String? @unique
+
+  createdAt DateTime @default(now())
+
+  user    User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  bugReport BugReport? @relation(fields: [bugReportId], references: [id], onDelete: SetNull)
+  workQueueItems WorkQueueItem[]
+
+  @@index([severity, resolutionStatus])
+  @@index([traceId])
+  @@index([createdAt])
+  @@index([category])
+}
+
+model TraceRecord {
+  id     String @id @default(cuid())
+  traceId String
+  requestId String?
+
+  service  String
+  operation String
+  method   String?
+  route    String?
+  userId   String?
+
+  durationMs Int?
+  result    String
+  errorCategory SystemErrorCategory?
+  metadata  Json?
+  startedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([traceId])
+  @@index([operation, startedAt])
+  @@index([createdAt])
+}
+
+model PerformanceMetric {
+  id     String @id @default(cuid())
+  name   String
+  kind   String
+  p50 Float @default(0)
+  p95 Float @default(0)
+  p99 Float @default(0)
+  count Int @default(0)
+  windowStart DateTime
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([name, windowStart])
+}
+
+model WorkQueueItem {
+  id     String @id @default(cuid())
+  userId String?
+
+  type     QueueJobType
+  state    QueueJobState @default(QUEUED)
+  payload  Json
+  payloadHash String
+  idempotencyKey String
+
+  attempts    Int     @default(0)
+  maxAttempts Int     @default(3)
+  nextRunAt   DateTime @default(now())
+  lockedAt    DateTime?
+  lockedBy    String?
+
+  lastErrorCode    String?
+  lastErrorMessage String?
+  resultSummary    Json?
+
+  traceId    String?
+  systemErrorId String?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  error SystemError? @relation(fields: [systemErrorId], references: [id], onDelete: SetNull)
+
+  // One row per idempotency key: duplicate enqueues are impossible.
+  @@unique([type, idempotencyKey])
+  @@index([state, nextRunAt])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model IdempotencyKey {
+  id     String @id @default(cuid())
+  userId String?
+
+  key    String
+  scope  String
+  requestHash String
+  responseSnapshot Json?
+  status String @default("IN_PROGRESS")
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([scope, key])
+  @@index([expiresAt])
+}
+
+model CircuitBreakerState {
+  id     String @id @default(cuid())
+  name   String @unique
+
+  state        CircuitState @default(CLOSED)
+  failureCount Int     @default(0)
+  successCount Int     @default(0)
+  openedAt     DateTime?
+  nextProbeAt  DateTime?
+  lastError    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProviderHealth {
+  id     String @id @default(cuid())
+  provider AIProviderName @unique
+
+  state      HealthState @default(HEALTHY)
+  consecutiveFailures Int @default(0)
+  totalSuccess Int @default(0)
+  totalFailure Int @default(0)
+  lastSuccessAt DateTime?
+  lastFailureAt DateTime?
+  lastError    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HealthCheckResult {
+  id     String @id @default(cuid())
+  subsystem String
+
+  state      HealthState
+  detail     String
+  durationMs Int?
+  metadata   Json?
+
+  checkedAt DateTime @default(now())
+
+  @@index([subsystem, checkedAt])
+}
+
+model FeatureFlag {
+  id     String @id @default(cuid())
+  key    String @unique
+  name   String
+  description String?
+
+  state       FlagState @default(OFF)
+  rolloutPercent Int   @default(0)
+  allowedUserIds String[]
+  allowedEmails String[]
+
+  category String  @default("general")
+  // Security-relevant flags may never be used to bypass auth/billing.
+  securitySensitive Boolean @default(false)
+
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([state])
+}
+
+model ReleaseRecord {
+  id     String @id @default(cuid())
+  appVersion    String
+  schemaVersion String
+  codeRevision  String?
+  status        ReleaseStatus @default(IN_PROGRESS)
+
+  promptVersions Json
+  featureFlags   Json
+  notes          String?
+  releasedAt     DateTime?
+  rolledBackAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+}
+
+model Experiment {
+  id     String @id @default(cuid())
+  key    String @unique
+  name   String
+  hypothesis String
+  status ExperimentStatus @default(DRAFT)
+
+  variants Json
+  metrics  Json
+  results  Json?
+  startedAt DateTime?
+  concludedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SelfImprovementProposal {
+  id     String @id @default(cuid())
+  stage  ImprovementStage @default(OBSERVE)
+
+  targetKind    VersionKind
+  targetIdentifier String
+  currentVersion Int?
+  candidateVersion Int?
+  observation   String
+  metrics       Json?
+  rationale     String
+
+  // Auto-repair is confined to non-production environments.
+  repairEnvironment RepairEnvironment?
+  repairStatus      RepairStatus?
+  repairPatch       String?
+  repairReport      Json?
+  repairTraceId     String?
+
+  approvedBy  String?
+  approvedAt  DateTime?
+  deployedAt  DateTime?
+  rolledBackAt DateTime?
+  monitoring   Json?
+  outcome      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stage])
+  @@index([targetIdentifier])
+}
+
+model BugReport {
+  id     String @id @default(cuid())
+  diagnosticId String @unique
+
+  userId String?
+
+  whatAttempted String
+  whatHappened  String
+  steps         String?
+  screenshotUrl String?
+  includeDiagnostics Boolean @default(false)
+  diagnostics   Json?
+
+  status       BugReportStatus @default(OPEN)
+  severity     SystemErrorSeverity @default(WARNING)
+  category     SystemErrorCategory @default(UNKNOWN)
+  traceId      String?
+
+  reproductionStatus ReproductionStatus @default(NOT_ATTEMPTED)
+  rootCause    String?
+  rootCauseCategory RootCauseCategory?
+  regressionTestPath String?
+  resolutionNote String?
+
+  occurredAt DateTime?
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  systemError SystemError?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+model DataExportRequest {
+  id     String @id @default(cuid())
+  userId String
+
+  kind     String
+  format   String
+  status   QueueJobState @default(QUEUED)
+  fileName String?
+  storagePath String?
+  sizeBytes Int?
+  expiresAt DateTime?
+
+  workItemId String?
+
+  createdAt DateTime @default(now())
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model DataIntegrityIssue {
+  id     String @id @default(cuid())
+  checkName String
+
+  entityType String
+  entityId   String
+  issueType  String
+  severity   SystemErrorSeverity @default(WARNING)
+  detail     String
+  autoRepairable Boolean @default(false)
+  repairedAt DateTime?
+  repairNote String?
+
+  createdAt DateTime @default(now())
+
+  @@index([checkName, createdAt])
+  @@index([autoRepairable])
+}
+
+model WebhookEvent {
+  id     String @id @default(cuid())
+  provider BillingProviderName
+  externalEventId String
+  eventType String
+
+  signatureValid Boolean @default(false)
+  replayDetected Boolean @default(false)
+  payloadHash    String
+  sanitizedPayload Json?
+
+  status      QueueJobState @default(QUEUED)
+  entitlementId String?
+  processedAt  DateTime?
+  errorCode    String?
+  errorMessage String?
+  attempts     Int    @default(0)
+
+  receivedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, externalEventId])
+  @@index([status])
+}
+
+model ProductMetric {
+  id     String @id @default(cuid())
+  name   String
+  bucket DateTime
+  value  Float @default(0)
+  count  Int   @default(0)
+
+  // Aggregated only. Never contains user-identifiable or private content.
+  dimensions Json?
+  createdAt DateTime @default(now())
+
+  @@unique([name, bucket])
+  @@index([name, bucket])
+}

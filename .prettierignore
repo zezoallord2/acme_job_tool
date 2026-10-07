@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+coverage
+data
+backups
+test-results
+playwright-report
+blob-report
+prisma/migrations
+package-lock.json
+next-env.d.ts
+tsconfig.tsbuildinfo
+*.log
+
+# Unrelated sibling projects in this workspace are not part of Acme Jobs.
+acme webite
+acme-webite-whop
+my website

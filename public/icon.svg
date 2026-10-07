@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Acme Jobs">
+  <rect width="64" height="64" rx="14" fill="#0f3d2e" />
+  <path
+    d="M20 45 L32 19 L44 45"
+    fill="none"
+    stroke="#f7f7f5"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M25.5 37 H38.5"
+    fill="none"
+    stroke="#8fd6b0"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+</svg>

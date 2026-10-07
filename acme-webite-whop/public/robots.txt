@@ -1,0 +1,6 @@
+User-Agent: *
+Allow: /
+Disallow: /api/
+
+Host: https://acme-jobs.whop.site
+Sitemap: https://acme-jobs.whop.site/sitemap.xml
