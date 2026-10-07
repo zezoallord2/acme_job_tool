@@ -9,7 +9,6 @@ import { ApiKeyForm } from "@/components/api-key-form";
 import { ReportProblemForm } from "@/components/report-problem-form";
 import { BillingLinkPanel } from "@/components/billing-link-panel";
 import { formatDate } from "@/lib/utils";
-import { LocalAIProvider } from "@/ai/providers/local";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings" };
@@ -42,14 +41,11 @@ export default async function SettingsPage({
     Promise.resolve(aiCostSummary()),
   ]);
 
-  const localHealth = await new LocalAIProvider().health();
   const resolution = await resolveProvider({
     preferManual: settings?.aiProvider === "MANUAL",
   }).catch(() => null);
   const providerCosts = cost.map((item) =>
-    item.provider.startsWith("Local AI")
-      ? { ...item, available: localHealth.ok }
-      : item,
+    item.provider.startsWith("Local AI") ? item : item,
   );
 
   return (
@@ -127,14 +123,6 @@ export default async function SettingsPage({
             </tbody>
           </table>
         </div>
-        <Alert
-          tone={localHealth.ok ? "success" : "info"}
-          title={localHealth.ok ? "Local AI is ready" : "Local AI setup needed"}
-        >
-          {localHealth.ok
-            ? `${localHealth.detail}. Workflows can now run without copying prompts to another site.`
-            : `${localHealth.detail}. Install Ollama, then run \`npm run ai:local:setup\`. Manual Mode remains available until the local model responds.`}
-        </Alert>
       </Card>
 
       <Card>
@@ -166,7 +154,6 @@ export default async function SettingsPage({
           description="Theme, notifications and product learning."
         />
         <SettingsForm
-          localAI={{ ok: localHealth.ok, detail: localHealth.detail }}
           settings={{
             theme: settings?.theme ?? "SYSTEM",
             aiProvider: settings?.aiProvider ?? "MANUAL",

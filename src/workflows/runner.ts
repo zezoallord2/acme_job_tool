@@ -126,16 +126,27 @@ export async function runWorkflow<T>(
     where: { userId: ctx.userId },
     select: { aiProvider: true },
   });
-  // Older call sites mark these workflows as Manual-capable. The user's saved
-  // preference decides whether that capability should be used immediately or
-  // only as the fallback after Local AI is attempted.
+
+  // When should a workflow run in Manual Mode instead of calling a model?
+  //
+  // This decision was previously `preferredProvider?.aiProvider !== "LOCAL"`,
+  // which meant: unless the account had been pointed at a local Ollama endpoint,
+  // run Manual first. Almost nobody had that set, so essentially every workflow
+  // returned a copy-paste prompt package and the product looked inert.
+  //
+  // The user's saved mode now decides directly. Manual is opt-in; AI is the
+  // default, and Manual remains the fallback when AI is unavailable.
+  const manualSelected =
+    preferredProvider?.aiProvider === "MANUAL" ||
+    preferredProvider?.aiProvider === "RETIRED_LOCAL";
+
   const preferManual = forceLocal
     ? false
     : manualInput
       ? true
       : ctx.preferManual === false
         ? false
-        : preferredProvider?.aiProvider !== "LOCAL";
+        : manualSelected;
 
   // --- Manual Mode: return the prompt package so the UI can offer it ---------
   // A pasted response always continues through validation, even in Manual Mode;

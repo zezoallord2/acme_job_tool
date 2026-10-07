@@ -53,8 +53,8 @@ async function upsertUser(input: {
   });
   await prisma.userSettings.upsert({
     where: { userId: user.id },
-    create: { userId: user.id, aiProvider: "LOCAL" },
-    update: { aiProvider: "LOCAL" },
+    create: { userId: user.id, aiProvider: "ACME_BASIC" },
+    update: { aiProvider: "ACME_BASIC" },
   });
   await prisma.onboardingProgress
     .upsert({
@@ -508,7 +508,7 @@ async function seedOperations(): Promise<void> {
         RESUME_TAILORING: "v6",
       } as never,
       featureFlags: { daily_priority_v2: "ON" } as never,
-      notes: "Zero-cost local release. Manual AI mode is the default AI path.",
+      notes: "Zero-cost release. AI is on by default via the hosted free tier.",
     },
     update: {},
   });

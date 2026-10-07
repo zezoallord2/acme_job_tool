@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { extractJson, validateWorkflowOutput, safetyScan } from "@/ai/validate";
 import { ManualAIProvider, buildManualPrompt } from "@/ai/providers/manual";
 import { AIProviderError } from "@/ai/provider";
-import { LocalAIProvider } from "@/ai/providers/local";
+import { OpenAIProvider } from "@/ai/providers/byok";
 import { resolveProvider, aiCostSummary } from "@/ai/router";
 import { PROMPTS, buildPrompt } from "@/ai/prompts";
 import { activePromptVersion, WORKFLOW_IDS } from "@/ai/workflow-ids";
@@ -193,34 +193,21 @@ describe("Provider resolution in zero-cost mode", () => {
     }
   });
 
-  it("reports local AI as unavailable when not configured, without failing", async () => {
-    const local = new LocalAIProvider({ baseUrl: "", model: "" });
-    expect(await local.isConfigured()).toBe(false);
-    const health = await local.health();
-    expect(health.ok).toBe(false);
-  });
-
-  it("blocks remote Ollama endpoints unless the operator explicitly opts in", async () => {
-    const local = new LocalAIProvider({
-      baseUrl: "http://example.com:11434",
-      model: "acme-jobs",
-    });
-    expect(await local.isConfigured()).toBe(false);
-    expect((await local.health()).detail).toContain("remote");
-  });
-
   it("rejects oversized prompts before sending career data", async () => {
-    const local = new LocalAIProvider({
-      baseUrl: "http://127.0.0.1:11434",
-      model: "acme-jobs",
-      maxContext: 512,
+    // Previously covered via LocalAIProvider. The guard is provider-independent,
+    // so it is asserted on the OpenAI-compatible path that remains.
+    const provider = new OpenAIProvider({
+      name: "OPENAI",
+      apiKey: "test-key-not-used",
+      model: "test-model",
+      costLabel: "test",
     });
     await expect(
-      local.generate({
+      provider.generate({
         workflowId: "JOB_ANALYSIS",
         promptVersion: "test-v1",
         systemPrompt: "safe",
-        userPrompt: "x".repeat(2_100),
+        userPrompt: "x".repeat(500_000),
       }),
     ).rejects.toMatchObject({ kind: "CONTENT_TOO_LARGE", retryable: false });
   });

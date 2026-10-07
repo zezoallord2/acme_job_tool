@@ -91,9 +91,11 @@ export const PROVIDER_COST_INFO: Record<
     costModel: "FREE_MANUAL",
     label: "Manual Mode — cost to Acme Jobs: $0",
   },
-  LOCAL: {
-    costModel: "FREE_LOCAL",
-    label: "Local AI — API cost: $0 (runs on your machine)",
+  // Unreachable: the migration renamed LOCAL away. Present only so the record is
+  // total over the database enum, which is what TypeScript requires.
+  RETIRED_LOCAL: {
+    costModel: "FREE_MANUAL",
+    label: "Retired — treated as Manual Mode",
   },
   OPENAI: {
     costModel: "BYOK",

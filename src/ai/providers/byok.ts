@@ -29,6 +29,14 @@ export interface ByokOptions {
 
 const DEFAULT_TIMEOUT = 90_000;
 
+/**
+ * Hard ceiling on a single prompt, in characters (~500k tokens of slack, far
+ * above any real workflow). A CV plus a job description plus an evidence ledger
+ * is a few tens of thousands; anything past this is a bug, and sending it would
+ * be both expensive and a privacy problem.
+ */
+const MAX_PROMPT_CHARS = 400_000;
+
 async function callJson(
   url: string,
   init: RequestInit,
@@ -115,6 +123,23 @@ abstract class BaseByokProvider implements AIProvider {
         false,
       );
     }
+
+    // Refuse an oversized prompt before it leaves the process.
+    //
+    // This guard used to live on LocalAIProvider alone, so removing the local
+    // provider also removed the only size limit in the codebase. A runaway prompt
+    // would otherwise ship a user's entire career history to a third party and
+    // bill them for it. Enforced here because every hosted provider inherits it.
+    const promptChars = request.systemPrompt.length + request.userPrompt.length;
+    if (promptChars > MAX_PROMPT_CHARS) {
+      throw new AIProviderError(
+        this.name,
+        "CONTENT_TOO_LARGE",
+        `Prompt is ${promptChars} characters; the limit is ${MAX_PROMPT_CHARS}. Nothing was sent.`,
+        false,
+      );
+    }
+
     const { body, durationMs } = await this.call(request);
     const rawText = this.extractText(body);
     if (!rawText) {

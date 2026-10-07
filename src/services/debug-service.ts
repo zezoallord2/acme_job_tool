@@ -7,7 +7,6 @@ import { jobQueue } from "@/queue/queue";
 import { circuitStates } from "@/queue/circuit";
 import { Errors } from "@/lib/errors";
 import { ensureDataDirs, storageProvider, dataRoot } from "@/lib/storage";
-import { LocalAIProvider } from "@/ai/providers/local";
 import type { HealthState } from "@prisma/client";
 
 /**
@@ -188,15 +187,16 @@ export async function runHealthChecks(): Promise<SubsystemHealth[]> {
   }
 
   const e = env();
-  if (e.LOCAL_AI_BASE_URL && e.LOCAL_AI_MODEL) {
-    const local = new LocalAIProvider();
-    const health = await local.health();
+  if (e.GEMINI_API_KEY || e.OPENAI_API_KEY) {
     out.push({
-      subsystem: "ai-local",
-      state: health.ok ? "HEALTHY" : "DEGRADED",
-      detail: health.detail,
+      subsystem: "ai-provider",
+      state: "HEALTHY",
+      detail: e.GEMINI_API_KEY
+        ? "Gemini and manual mode are both available."
+        : "Groq/OpenAI-compatible endpoint and manual mode are both available.",
     });
   }
+
   out.push({
     subsystem: "ai-manual",
     state: "HEALTHY",

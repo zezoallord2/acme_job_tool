@@ -81,10 +81,10 @@ export async function signupAction(
         name: name || emailValue.split("@")[0],
         passwordHash: await hashPassword(password),
         // ACME_BASIC, not LOCAL: `LOCAL` pointed at an Ollama endpoint that is not
-      // running on most machines, so every new account silently fell through to
-      // Manual Mode and looked broken. New accounts now start on the AI included
-      // in their plan, which is the product they signed up for.
-      settings: { create: { aiProvider: "ACME_BASIC" } },
+        // running on most machines, so every new account silently fell through to
+        // Manual Mode and looked broken. New accounts now start on the AI included
+        // in their plan, which is the product they signed up for.
+        settings: { create: { aiProvider: "ACME_BASIC" } },
         profile: { create: { email: emailValue, firstName: name || null } },
         onboardings: { create: {} },
       },

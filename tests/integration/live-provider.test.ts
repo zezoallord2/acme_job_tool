@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { resetEnvCache } from "@/lib/env";
 import { OpenAIProvider } from "@/ai/providers/byok";
-import { resolveProvider, aiAvailability } from "@/ai/router";
+import { aiAvailability } from "@/ai/router";
 
 /**
  * Live provider smoke test.

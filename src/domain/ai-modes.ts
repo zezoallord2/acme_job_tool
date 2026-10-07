@@ -83,9 +83,11 @@ export function resolveMode(input: {
   hasOwnKey: boolean;
   isComplete: boolean;
 }): AIMode {
-  const stored = input.storedProvider ?? "MANUAL";
+  const stored = input.storedProvider ?? "ACME_BASIC";
 
-  if (stored === "MANUAL" || stored === "LOCAL") return "MANUAL";
+  // Only an explicit choice puts an account into Manual Mode. The previous
+  // default was effectively Manual for everyone.
+  if (stored === "MANUAL") return "MANUAL";
   if (stored === "ACME_BASIC") return "BASIC_AI";
 
   // A named provider means BYOK once a key exists. Without one, an account that

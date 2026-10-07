@@ -49,13 +49,25 @@ describe("resolveMode", () => {
         isComplete: true,
       }),
     ).toBe("MANUAL");
+  });
+
+  it("defaults to Basic AI when nothing is stored", () => {
+    // The change that stopped every workflow opening in Manual Mode: a brand-new
+    // account has no saved preference and must get AI, not a copy-paste box.
     expect(
       resolveMode({
         storedProvider: null,
         hasOwnKey: false,
+        isComplete: true,
+      }),
+    ).toBe("BASIC_AI");
+    expect(
+      resolveMode({
+        storedProvider: undefined,
+        hasOwnKey: false,
         isComplete: false,
       }),
-    ).toBe("MANUAL");
+    ).toBe("BASIC_AI");
   });
 
   it("honours an explicit Basic AI choice even when a key exists", () => {
@@ -98,10 +110,10 @@ describe("resolveMode", () => {
     ).toBe("BASIC_AI");
   });
 
-  it("treats Local AI as Manual for billing purposes", () => {
+  it("treats the retired local provider as Manual", () => {
     expect(
       resolveMode({
-        storedProvider: "LOCAL",
+        storedProvider: "RETIRED_LOCAL",
         hasOwnKey: false,
         isComplete: false,
       }),

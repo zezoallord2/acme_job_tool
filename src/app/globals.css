@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /*
   Acme Jobs design system.
@@ -28,8 +28,11 @@
   --color-evidence-unknown: #61728a;
   --color-evidence-unknown-bg: #eef2f7;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 :root {
@@ -114,7 +117,9 @@ body {
   font-size: 0.9rem;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background 120ms ease, opacity 120ms ease;
+  transition:
+    background 120ms ease,
+    opacity 120ms ease;
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--brand-accent);
@@ -324,7 +329,12 @@ table.data tr:last-child td {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--surface-muted) 25%, var(--border) 50%, var(--surface-muted) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 25%,
+    var(--border) 50%,
+    var(--surface-muted) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 6px;

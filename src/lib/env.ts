@@ -89,31 +89,25 @@ const schema = z.object({
   ANALYTICS_PROVIDER: z.enum(["internal"]).default("internal"),
   PRODUCT_LEARNING_ENABLED: boolish.default("true"),
 
-  AI_MODE_PRIORITY: csv.default(
-    "local,gemini,openrouter,openai,anthropic,manual",
-  ),
+  // Ordered failover chain. `manual` is the terminal fallback: Manual Mode is a
+  // real supported mode, not an error state, and it must always be last so every
+  // paid feature has something to fall back to.
+  //
+  // The local/Ollama provider was removed: it pointed at an endpoint that does
+  // not exist on hosted machines, so new accounts silently landed on Manual
+  // Mode and looked broken. Hosted inference is the only supported path.
+  AI_MODE_PRIORITY: csv.default("openai,openrouter,gemini,anthropic,manual"),
   DEFAULT_AI_PROVIDER: z
-    .enum(["manual", "local", "openai", "anthropic", "gemini", "openrouter"])
-    .default("manual"),
+    .enum(["manual", "openai", "anthropic", "gemini", "openrouter"])
+    .default("openai"),
 
-  LOCAL_AI_BASE_URL: z
-    .string()
-    .transform((value) => value.trim() || "http://127.0.0.1:11434")
-    .default("http://127.0.0.1:11434"),
-  LOCAL_AI_MODEL: z
-    .string()
-    .transform((value) => value.trim() || "acme-jobs")
-    .default("acme-jobs"),
-  LOCAL_AI_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
-  LOCAL_AI_MAX_CONTEXT: z.coerce.number().int().min(512).default(4096),
-  /**
-   * Off by default: career evidence must not be sent to an arbitrary network
-   * endpoint because someone mistyped LOCAL_AI_BASE_URL.
-   */
-  LOCAL_AI_ALLOW_REMOTE: boolish.default("false"),
-  /** Bearer token for a trusted HTTPS gateway in front of remote inference. */
-  LOCAL_AI_API_KEY: z.string().min(16).optional(),
-  LOCAL_AI_MAX_RESPONSE_BYTES: z.coerce
+  // Which concrete model the Acme-funded "Basic AI" mode uses. Groq by default:
+  // it has a genuinely usable free tier and an OpenAI-compatible API, so Basic
+  // AI can be offered at $0 without a paid dependency.
+  BASIC_AI_MODEL: z.string().default("qwen/qwen3.8-27b"),
+  BASIC_AI_BASE_URL: z.string().default("https://api.groq.com/openai/v1"),
+  BASIC_AI_TIMEOUT_MS: z.coerce.number().int().min(1000).default(60000),
+  BASIC_AI_MAX_RESPONSE_BYTES: z.coerce
     .number()
     .int()
     .min(16_384)

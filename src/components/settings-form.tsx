@@ -17,13 +17,7 @@ export interface SettingsValue {
   notifyDrafts: boolean;
 }
 
-export function SettingsForm({
-  settings,
-  localAI,
-}: {
-  settings: SettingsValue;
-  localAI: { ok: boolean; detail: string };
-}) {
+export function SettingsForm({ settings }: { settings: SettingsValue }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     updateSettingsAction as never,
@@ -66,31 +60,6 @@ export function SettingsForm({
           <option value="system">System</option>
         </select>
       </Field>
-
-      <Field
-        label="Preferred AI provider"
-        htmlFor="s-ai"
-        hint="Manual is always available and costs Acme Jobs $0. Changing this never removes Manual Mode."
-      >
-        <select
-          id="s-ai"
-          name="aiProvider"
-          className="input"
-          defaultValue={settings.aiProvider}
-        >
-          <option value="LOCAL">Private AI (Ollama on the app server)</option>
-          <option value="MANUAL">Manual Mode (copy and paste, $0)</option>
-        </select>
-      </Field>
-
-      <Alert
-        tone={localAI.ok ? "success" : "info"}
-        title={localAI.ok ? "Private AI connected" : "Private AI not connected"}
-      >
-        {localAI.ok
-          ? localAI.detail
-          : `${localAI.detail}. Local AI falls back safely to Manual Mode; no workflow loses your input.`}
-      </Alert>
 
       <fieldset className="space-y-2">
         <legend className="label">

@@ -201,7 +201,6 @@ function toProviderName(name: string): AIProviderName {
     "ANTHROPIC",
     "GEMINI",
     "OPENROUTER",
-    "LOCAL",
     "MANUAL",
   ];
   const upper = name.toUpperCase() as AIProviderName;

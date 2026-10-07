@@ -1,7 +1,6 @@
 import type { AIProviderName } from "@prisma/client";
 import { AIProviderError, type AIProvider, type AIRequest } from "./provider";
 import { ManualAIProvider } from "./providers/manual";
-import { LocalAIProvider } from "./providers/local";
 import {
   AnthropicProvider,
   GeminiProvider,
@@ -9,14 +8,16 @@ import {
   OpenRouterProvider,
 } from "./providers/byok";
 import { env } from "@/lib/env";
-import { logInfo, logWarn } from "@/lib/logger";
+import { logWarn } from "@/lib/logger";
 import { globalBreaker, toFailureKind } from "@/ai/circuit-breaker";
 
 /**
  * Provider selection. Manual Mode is always present, so a zero-cost
  * configuration can never fail to produce a usable workflow.
  *
- * Zero-cost default order: local AI if installed -> manual.
+ * Default order: hosted providers with a usable free tier -> manual. The local
+ * (Ollama) provider was removed; it resolved to an endpoint that does not exist
+ * on hosted machines, so accounts silently fell back to Manual Mode.
  */
 
 export interface ProviderResolution {
@@ -138,7 +139,6 @@ export async function resolveProvider(
   // 2. Configured zero-cost order.
   const validProviders: AIProviderName[] = [
     "MANUAL",
-    "LOCAL",
     "OPENAI",
     "ANTHROPIC",
     "GEMINI",
@@ -155,24 +155,8 @@ export async function resolveProvider(
         provider: manual,
         chain: ["MANUAL"],
         usedFallback: false,
-        reason: "Manual Mode (zero-cost default).",
+        reason: "Manual Mode.",
       };
-    }
-    if (candidate === "LOCAL") {
-      const local = new LocalAIProvider();
-      if (await local.isAvailable()) {
-        return {
-          provider: local,
-          chain: ["LOCAL"],
-          usedFallback: false,
-          reason: "Local AI available.",
-        };
-      }
-      logInfo(
-        { operation: "ai.resolve" },
-        "Local AI unavailable; continuing down the configured chain",
-      );
-      continue;
     }
     const key = serverKeyFor(candidate);
     if (key) {
@@ -246,7 +230,6 @@ export async function aiAvailability(
     OPENAI: "OpenAI",
     ANTHROPIC: "Anthropic",
     OPENROUTER: "OpenRouter",
-    LOCAL: "Local model (free)",
     MANUAL: "Manual Mode",
   };
   return {
@@ -290,12 +273,6 @@ export async function executeWithFallback(
   );
   for (const name of configuredOrder) {
     if (name === "MANUAL") continue;
-    if (name === "LOCAL") {
-      if (e.LOCAL_AI_BASE_URL && e.LOCAL_AI_MODEL) {
-        candidates.push(new LocalAIProvider());
-      }
-      continue;
-    }
     if (!e.ACME_AI_ENABLED) continue;
     // Server-held credentials power the one-click production experience. They
     // are never eligible unless the operator explicitly accepts that cost.
@@ -401,12 +378,6 @@ export function aiCostSummary(): Array<{
       available: true,
       costModel: "FREE_MANUAL",
       label: "Cost to Acme Jobs: $0",
-    },
-    {
-      provider: "Local AI (Ollama / llama.cpp)",
-      available: Boolean(e.LOCAL_AI_BASE_URL && e.LOCAL_AI_MODEL),
-      costModel: "FREE_LOCAL",
-      label: "API cost: $0 — runs on your machine",
     },
     {
       provider: "OpenAI (BYOK)",

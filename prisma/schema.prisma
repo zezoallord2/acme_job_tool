@@ -306,13 +306,16 @@ enum AIProviderName {
   ANTHROPIC
   GEMINI
   OPENROUTER
-  LOCAL
   MANUAL
 
   /// Acme Jobs pays the provider bill. Included in a paid plan; subject to plan
   /// limits. Distinct from GEMINI, which means "use the key stored on this
   /// account" (BYOK) once one exists.
   ACME_BASIC
+
+  /// The former LOCAL (Ollama) provider. Renamed by migration rather than dropped
+  /// because PostgreSQL cannot remove an enum value. Unreachable from code.
+  RETIRED_LOCAL
 }
 
 enum AIInteractionStatus {
