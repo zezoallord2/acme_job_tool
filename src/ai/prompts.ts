@@ -61,6 +61,49 @@ function listOr(value: unknown, fallback = "(not provided)"): string {
   return fallback;
 }
 
+/** Renders a resume object as readable text; never "[object Object]". */
+function renderResume(value: unknown): string {
+  if (typeof value === "string") return value || "(none)";
+  if (!value || typeof value !== "object")
+    return "(none provided — build from evidence)";
+  const r = value as {
+    summary?: string;
+    skills?: string[];
+    experiences?: Array<{
+      company?: string;
+      title?: string;
+      startDate?: string;
+      endDate?: string;
+      bullets?: string[];
+    }>;
+    projects?: Array<{ name?: string; bullets?: string[] }>;
+    education?: Array<{
+      degree?: string;
+      field?: string;
+      institution?: string;
+    }>;
+  };
+  const lines: string[] = [];
+  lines.push(`SUMMARY: ${r.summary || "(none)"}`);
+  lines.push(`SKILLS: ${(r.skills ?? []).join(", ") || "(none)"}`);
+  (r.experiences ?? []).forEach((e, i) => {
+    lines.push(
+      `EXPERIENCE [index ${i}]: ${e.title ?? ""} — ${e.company ?? ""} (${e.startDate ?? ""} – ${e.endDate ?? ""})`,
+    );
+    for (const b of e.bullets ?? []) lines.push(`  - ${b}`);
+  });
+  for (const p of r.projects ?? []) {
+    lines.push(`PROJECT: ${p.name ?? ""}`);
+    for (const b of p.bullets ?? []) lines.push(`  - ${b}`);
+  }
+  for (const e of r.education ?? []) {
+    lines.push(
+      `EDUCATION: ${[e.degree, e.field, e.institution].filter(Boolean).join(", ")}`,
+    );
+  }
+  return lines.join("\n");
+}
+
 export const PROMPTS: Record<WorkflowId, PromptDefinition> = {
   JOB_ANALYSIS: {
     workflowId: "JOB_ANALYSIS",
@@ -166,49 +209,73 @@ Rewrite the bullet. Cite only evidence ids you actually used. If you want to add
 
   RESUME_TAILORING: {
     workflowId: "RESUME_TAILORING",
-    systemPrompt: `You tailor a resume to one job using ONLY the user's evidence.
-Reorder, re-word and select. Never add facts.
+    systemPrompt: `You are an expert resume writer. You tailor ONE resume to ONE job so it
+passes ATS keyword screening and reads well to a recruiter, using ONLY facts the
+user already has.
 ${SAFETY_CONTRACT}
+
+How to tailor:
+- Summary: 2-3 sentences that lead with the job's core requirements the user
+  genuinely meets. No first person, no buzzwords.
+- Skills: return the user's skills reordered so the ones this job asks for come
+  first. You may include a skill ONLY if it appears in the resume or evidence.
+- Experience: for each relevant role (addressed by its index), rewrite bullets to
+  use the job's keywords, start with a strong verb, and surface metrics the user
+  ALREADY stated. Put the "original" bullet text you are rewriting in "original".
+  A new bullet (original = null) must cite evidenceIds and say nothing beyond them.
+- Never change or output employers, job titles, locations or dates.
+- Never invent a number, tool, certification, scope or leadership claim.
+- When the job requires something the user has no evidence for, add a "gaps"
+  entry with a short, specific question to ask the user — do not write it in.
+- "jobKeywords": 10-25 important terms copied verbatim from the job text.
+- "changes": a short list of what you changed and why, in plain language.
 
 Return ONLY valid JSON:
 {
   "summary": string,
   "prioritizedSkills": string[],
-  "experienceOrder": number[],
-  "bullets": [
-    {
-      "section": "SUMMARY" | "EXPERIENCE" | "PROJECT" | "SKILLS",
-      "text": string,
-      "evidenceIds": number[],
-      "unsupportedAspects": string[]
-    }
+  "experiences": [
+    { "index": number,
+      "bullets": [ { "text": string, "original": string | null, "evidenceIds": number[], "why": string } ] }
   ],
-  "droppedPoints": [{ "text": string, "reason": string }],
+  "changes": [ { "section": "summary" | "skills" | "experience", "what": string, "why": string } ],
+  "jobKeywords": string[],
+  "gaps": [ { "requirement": string, "question": string } ],
+  "droppedPoints": [ { "text": string, "reason": string } ],
   "needsInput": string[]
 }`,
     jsonHint:
-      '{"summary":"","prioritizedSkills":[],"experienceOrder":[],"bullets":[],"droppedPoints":[],"needsInput":[]}',
+      '{"summary":"","prioritizedSkills":[],"experiences":[],"changes":[],"jobKeywords":[],"gaps":[],"droppedPoints":[],"needsInput":[]}',
     buildUserPrompt: ({
       evidence,
       requirements,
       currentResume,
       matrixSummary,
+      jobText,
+      jobTitle,
     }) =>
-      `JOB REQUIREMENTS (priority order)
+      `TARGET JOB: ${String(jobTitle ?? "not stated")}
+
+JOB DESCRIPTION
+"""
+${String(jobText ?? "(not provided)").slice(0, 12000)}
+"""
+
+JOB REQUIREMENTS (priority order)
 ${listOr(requirements)}
 
-EVIDENCE MATRIX SUMMARY
+EVIDENCE MATRIX SUMMARY (strength: requirement)
 ${String(matrixSummary ?? "(none)")}
 
-CURRENT RESUME
-${String(currentResume ?? "(none provided — build from evidence)")}
+CURRENT RESUME (experience rows are numbered by index)
+${renderResume(currentResume)}
 
-AVAILABLE EVIDENCE
+AVAILABLE EVIDENCE (cite by number; [status] in brackets)
 """
 ${evidenceBlock(evidence as never)}
 """
 
-Produce a tailored resume. Every bullet must cite evidence ids.`,
+Tailor the resume to this job now.`,
   },
 
   COVER_LETTER: {

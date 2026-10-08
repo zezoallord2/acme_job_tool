@@ -219,10 +219,9 @@ export async function runWorkflow<T>(
             ok: false,
             code: "PROVIDER_UNAVAILABLE",
             message: "No AI provider is available.",
-            userMessage:
-              attempts.length
-                ? `AI is unavailable right now — every provider failed (${attempts.join(", ")}). Nothing was generated. Retry, or use manual mode.`
-                : "AI is not configured on this server (no provider key). Nothing was generated. Use manual mode, or add your own key in Settings.",
+            userMessage: attempts.length
+              ? `AI is unavailable right now — every provider failed (${attempts.join(", ")}). Nothing was generated. Retry, or use manual mode.`
+              : "AI is not configured on this server (no provider key). Nothing was generated. Use manual mode, or add your own key in Settings.",
             interactionId: interaction.id,
             traceId,
             manualFallback: manualPackage,
@@ -411,9 +410,10 @@ async function attemptCorrectionRetry(
 }
 
 /** Workflows whose output contains prose get the invented-metric check. */
+// RESUME_TAILORING is checked by its own, stricter guard (src/domain/tailoring.ts),
+// which also allows numbers already present in the user's resume.
 const PROSE_WORKFLOWS = new Set<WorkflowId>([
   "RESUME_BULLET",
-  "RESUME_TAILORING",
   "COVER_LETTER",
   "APPLICATION_ANSWER",
   "STAR_STORY",

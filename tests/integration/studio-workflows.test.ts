@@ -20,24 +20,6 @@ import { ensureMasterResume } from "@/services/resume-service";
  * overwritten or treated as fact.
  */
 
-const TAILORING = {
-  summary: "Reporting analyst with a rebuilt month-end pack.",
-  prioritizedSkills: ["Excel", "Power Query"],
-  experienceOrder: [0],
-  bullets: [
-    {
-      section: "EXPERIENCE",
-      text: "Rebuilt the month-end reporting pack, cutting preparation from five days to two.",
-      evidenceIds: [0],
-      unsupportedAspects: [],
-    },
-  ],
-  droppedPoints: [
-    { text: "Raised revenue by 30%", reason: "No evidence supports it" },
-  ],
-  needsInput: [],
-};
-
 const BULLET = {
   suggestion:
     "Rebuilt the month-end reporting pack in Excel, cutting preparation from five days to two.",
@@ -152,7 +134,7 @@ describe("Writing Studio registry", () => {
     await prisma.user.deleteMany({ where: { id: user.id } });
   });
 
-  it("registers every workflow that previously had no caller", () => {
+  it("registers every studio workflow (tailoring has its own screen)", () => {
     expect(STUDIO_IDS.sort()).toEqual(
       [
         "APPLICATION_ANSWER",
@@ -161,7 +143,6 @@ describe("Writing Studio registry", () => {
         "FOLLOW_UP",
         "LINKEDIN_OPTIMIZER",
         "RESUME_BULLET",
-        "RESUME_TAILORING",
         "STAR_STORY",
         "VOICE_PROFILE",
       ].sort(),
@@ -191,79 +172,6 @@ describe("Writing Studio registry", () => {
 
   it("rejects an unknown workflow id", () => {
     expect(() => studioWorkflow("NOT_A_WORKFLOW")).toThrow();
-  });
-
-  describe("RESUME_TAILORING", () => {
-    it("saves a job-linked draft and leaves the Master Resume untouched", async () => {
-      const masterBefore = await prisma.resume.findFirstOrThrow({
-        where: { userId: user.id, isMaster: true },
-        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-      });
-      const hashBefore = masterBefore.versions[0]?.contentHash;
-
-      const result = await runStudio(
-        user.id,
-        "RESUME_TAILORING",
-        { applicationId },
-        TAILORING,
-      );
-
-      expect(result.summary).toMatch(/nothing was sent/i);
-      const draft = await prisma.resume.findFirst({
-        where: { userId: user.id, isMaster: false },
-        // updateResumeContent appends a version, so the tailored content is on
-        // the newest one, not simply the first.
-        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-      });
-      expect(draft).not.toBeNull();
-      expect(draft?.applicationId).toBe(applicationId);
-      expect(draft?.workflowId).toBe("RESUME_TAILORING");
-
-      // The Master Resume is a separate row and was not modified.
-      const masterAfter = await prisma.resume.findFirstOrThrow({
-        where: { userId: user.id, isMaster: true },
-        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-      });
-      expect(masterAfter.versions[0]?.contentHash).toBe(hashBefore);
-      expect(draft?.id).not.toBe(masterAfter.id);
-
-      // The tailored draft really did get the tailored content, and it differs
-      // from what the Master Resume still holds.
-      const draftContent = draft?.versions[0]?.content as {
-        summary?: string;
-        skills?: string[];
-      } | null;
-      expect(draftContent?.summary).toBe(TAILORING.summary);
-      expect(draftContent?.skills).toEqual(TAILORING.prioritizedSkills);
-
-      const masterContent = masterAfter.versions[0]?.content as {
-        summary?: string;
-      } | null;
-      expect(masterContent?.summary).not.toBe(TAILORING.summary);
-    });
-
-    it("reports a dropped unsupported point rather than dropping it silently", async () => {
-      const result = await runStudio(
-        user.id,
-        "RESUME_TAILORING",
-        { applicationId },
-        TAILORING,
-      );
-      expect(result.warnings.some((w) => /Raised revenue by 30%/.test(w))).toBe(
-        true,
-      );
-    });
-
-    it("refuses to tailor without a real application", async () => {
-      await expect(
-        runStudio(
-          user.id,
-          "RESUME_TAILORING",
-          { applicationId: "" },
-          TAILORING,
-        ),
-      ).rejects.toThrow(/choose an application/i);
-    });
   });
 
   describe("RESUME_BULLET", () => {
@@ -518,26 +426,6 @@ describe("Writing Studio registry", () => {
       expect(
         await prisma.coverLetter.count({ where: { userId: user.id } }),
       ).toBe(0);
-    });
-  });
-
-  describe("cross-user isolation", () => {
-    it("cannot tailor against another user's application", async () => {
-      const other = await createTestUser({ complete: true });
-      await expect(
-        runStudio(user.id, "RESUME_TAILORING", { applicationId }, TAILORING),
-      ).resolves.toBeDefined();
-
-      // `other` has no application of their own, so the same id is not theirs.
-      expect(
-        await prisma.application.count({ where: { id: applicationId } }),
-      ).toBe(1);
-      expect(
-        await prisma.resume.count({
-          where: { userId: other.id, isMaster: false },
-        }),
-      ).toBe(0);
-      await prisma.user.deleteMany({ where: { id: other.id } });
     });
   });
 });

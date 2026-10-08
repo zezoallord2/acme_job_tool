@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             detail: "See openings matched to your profile",
           },
           {
-            href: "/app/resumes",
+            href: "/app/tailor",
             title: "Tailor Resume",
             detail: "Adapt your resume for one job",
           },

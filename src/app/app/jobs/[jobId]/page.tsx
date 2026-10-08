@@ -93,7 +93,7 @@ export default async function JobDetailPage({
             <Link
               href={
                 application
-                  ? `/app/applications/${application.id}/tailor?jobId=${job.id}`
+                  ? `/app/tailor?applicationId=${application.id}`
                   : "/app/applications"
               }
               className="btn-primary"

@@ -43,9 +43,9 @@ export const PROMPT_VERSIONS: Record<
     retired: ["v1", "v2"],
   },
   RESUME_TAILORING: {
-    active: "RESUME_TAILORING_PROMPT_v6",
-    candidates: ["RESUME_TAILORING_PROMPT_v7"],
-    retired: ["v1", "v2", "v3", "v4", "v5"],
+    active: "RESUME_TAILORING_PROMPT_v7",
+    candidates: [],
+    retired: ["v1", "v2", "v3", "v4", "v5", "v6"],
   },
   RESUME_BULLET: {
     active: "RESUME_BULLET_PROMPT_v7",

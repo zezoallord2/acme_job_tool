@@ -164,7 +164,7 @@ const REQUIRED_KEYS: Partial<Record<WorkflowId, string[]>> = {
   JOB_ANALYSIS: ["role", "mustHaveRequirements", "responsibilities"],
   EVIDENCE_EXTRACTION: ["statements"],
   RESUME_BULLET: ["suggestion"],
-  RESUME_TAILORING: ["summary", "bullets"],
+  RESUME_TAILORING: ["summary", "experiences"],
   COVER_LETTER: ["body"],
   LINKEDIN_OPTIMIZER: ["headline", "about"],
   APPLICATION_ANSWER: ["answer"],
