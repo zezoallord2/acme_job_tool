@@ -62,9 +62,7 @@ export default async function AdminPage({
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Debug Center
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Debug Center</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           Internal tooling. Everything is local: PostgreSQL records and the
           local filesystem. No external observability service is required.

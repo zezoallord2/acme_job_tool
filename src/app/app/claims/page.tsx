@@ -12,7 +12,7 @@ import {
 import { ClaimActions } from "@/components/claim-actions";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Claim Inspector" };
+export const metadata = { title: "Truth Check" };
 
 export default async function ClaimsPage() {
   const user = await requireUser();
@@ -23,9 +23,7 @@ export default async function ClaimsPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-            Claim Inspector
-          </h1>
+          <h1 className="page-title text-[var(--text)]">Truth Check</h1>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Every generated claim, with the evidence behind it and what was
             excluded. Green is supported, amber needs your confirmation, red
@@ -39,16 +37,16 @@ export default async function ClaimsPage() {
 
       {!isComplete ? (
         <Alert tone="info" title="Free view">
-          You can see which claims are unverified. The Claim Inspector with
-          Confirm / Edit / Remove / Show Evidence / Add Evidence is part of
-          Complete Edition.
+          You can see which claims are unverified. The Truth Check with Confirm
+          / Edit / Remove / Show Evidence / Add Evidence is part of Complete
+          Edition.
         </Alert>
       ) : null}
 
       <Card>
         <CardHeader
           title={`${claims.length} claim${claims.length === 1 ? "" : "s"} needing attention`}
-          description="Nothing here blocks you until you try to send an application — then the Readiness Gate refuses a clean READY."
+          description="Nothing here blocks you until you try to send an application — then Ready to Apply? explains what needs attention."
         />
         {claims.length === 0 ? (
           <EmptyState

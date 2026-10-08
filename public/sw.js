@@ -16,7 +16,7 @@
 //     install never carries one person's data into another's session.
 
 const CACHE = "acme-shell-v1";
-const SHELL = ["/", "/offline", "/manifest.webmanifest", "/icon.svg"];
+const SHELL = ["/", "/offline", "/manifest.webmanifest", "/icon.svg", "/brand/logo.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

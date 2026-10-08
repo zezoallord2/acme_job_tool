@@ -165,7 +165,7 @@ export async function ensureMasterResume(userId: string) {
   const resume = await prisma.resume.create({
     data: {
       userId,
-      label: "Master Resume",
+      label: "My Resume",
       template: "STANDARD_PROFESSIONAL",
       isMaster: true,
       currentVersion: 1,

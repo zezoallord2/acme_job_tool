@@ -14,7 +14,7 @@ import {
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Effort vs Opportunity" };
+export const metadata = { title: "Best Jobs" };
 
 export default async function OpportunitiesPage() {
   const user = await requireUser();
@@ -30,9 +30,7 @@ export default async function OpportunitiesPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Effort vs Opportunity
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Best Jobs</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Where should you spend your next hour? Ranked by evidence coverage and
           critical gaps against the tailoring effort each role demands. This is
@@ -154,7 +152,7 @@ export default async function OpportunitiesPage() {
           <p className="text-sm text-[var(--text-muted)]">
             Net value = (fit score × 2 + coverage × 3 − critical gaps × 1.5 +
             your priority bonus + deadline proximity) − (tailoring effort × 2).
-            Every input is a value already shown in your evidence matrix, so you
+            Every input is a value already shown in your match breakdown, so you
             can check the arithmetic yourself. No outcome prediction is
             involved.
           </p>

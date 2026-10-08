@@ -1,0 +1,20 @@
+Alex Example
+alex@example.test | Cairo, Egypt
+
+DATA ANALYST
+Data analyst with experience building dashboards and explaining trends.
+
+SKILLS
+SQL, Python, Power BI, Excel
+
+EXPERIENCE
+Data Analyst Intern, Example Company
+June 2025 - August 2025
+- Built a Power BI dashboard from weekly sales data.
+- Cleaned and analysed customer records using SQL and Python.
+
+EDUCATION
+BSc Computer Science, Example University, 2025
+
+CERTIFICATIONS
+Microsoft Power BI Data Analyst

@@ -18,7 +18,7 @@ export default function OfflinePage() {
         <p className="text-xs font-semibold tracking-wide text-[var(--brand-accent)] uppercase">
           No connection
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">
+        <h1 className="mt-2 page-title text-[var(--text)]">
           Acme Jobs cannot reach the server
         </h1>
       </div>

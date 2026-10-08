@@ -28,9 +28,7 @@ export default async function NotificationsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Notifications
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Notifications</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Interview reminders, follow-ups and deadlines generated from your own
           records. No marketing notifications.

@@ -15,7 +15,7 @@ export default async function NewEmploymentPage() {
   return (
     <div className="mx-auto max-w-[720px] space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+        <h1 className="page-title text-[var(--text)]">
           Add to your career profile
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">

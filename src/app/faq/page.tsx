@@ -4,29 +4,29 @@ import { PageHero } from "@/components/marketing";
 export const metadata = {
   title: "FAQ",
   description:
-    "How Acme Jobs works, what the evidence ledger guarantees, and how the zero-cost mode works.",
+    "How Acme Jobs keeps your experience truthful and how the no-cost fallback works.",
 };
 
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   {
     q: "Will Acme Jobs invent things about my experience?",
-    a: "No. Every generated claim is linked to the evidence records that support it. If no evidence supports a number, a tool or a leadership claim, it is shown as unsupported and cannot pass the Readiness Gate. Unsupported claims are shown in the Claim Inspector so you can confirm, edit, remove or attach evidence.",
+    a: "No. Every generated claim is linked to the experience that supports it. If no source supports a number, tool or leadership claim, it is shown as unsupported and cannot pass Ready to Apply?. Truth Check lets you confirm, edit, remove or support it.",
   },
   {
     q: "Do I need to pay for an AI service?",
-    a: "No. The default is Manual Mode: Acme Jobs builds a complete, self-contained prompt, you paste it into whatever assistant you already use, then paste the result back. Acme Jobs validates the response with a schema check and continues. Optional local AI (Ollama) and bring-your-own-key providers exist, but nothing requires them.",
+    a: "No. Acme Integrated AI is included with paid plans and runs one-click actions by default. Free users can use Manual Mode, and anyone can optionally bring their own provider key. Manual Mode builds a complete prompt, then validates the response you paste back.",
   },
   {
     q: "What does the free plan include?",
-    a: "Career Snapshot, career evidence, Resume Quick Check, basic Job Description Analyzer, basic Evidence Matrix, basic resume tailoring, one STAR story, a five-question mock interview, the 30-minute guided workflow, the Free Starter Guide, limited Ask Acme and saved work. It is enough to improve one real application.",
+    a: "Quick Profile, career evidence, Resume Quick Check, basic Job Check, basic Match Breakdown, basic resume tailoring, one STAR story, a five-question mock interview, the 30-minute guided workflow, the Free Starter Guide, limited Acme Assistant and saved work. It is enough to improve one real application.",
   },
   {
-    q: "What is the Application Capsule?",
-    a: 'A permanent record per application: the original job description, the analysis, the evidence matrix, the recommendation, the resume, cover letter and answers you submitted, the date applied, interview prep, notes, follow-ups and outcome. It answers the question "what exactly did I send this company?" permanently, and it never changes after sealing.',
+    q: "What is the Application Details?",
+    a: 'A permanent record per application: the original job description, the analysis, the match breakdown, the recommendation, the resume, cover letter and answers you submitted, the date applied, interview prep, notes, follow-ups and outcome. It answers the question "what exactly did I send this company?" permanently, and it never changes after sealing.',
   },
   {
     q: "Is there an ATS score?",
-    a: "No. There is no universal ATS score, so inventing one would be dishonest. Instead the Readiness Gate lists concrete conditions: unsupported claims, date consistency, requirements reviewed, tailoring, contact completeness, metrics verified, answer consistency and cross-document consistency. The result is READY, READY_WITH_WARNINGS or NOT_READY.",
+    a: "No. There is no universal ATS score, so inventing one would be dishonest. Instead Ready to Apply? checks unsupported claims, dates, reviewed requirements, tailoring, contact details, verified metrics and consistency. It tells you whether you are ready, need a quick review or should fix something first.",
   },
   {
     q: "Will Acme Jobs learn things about me without asking?",
@@ -42,7 +42,7 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   },
   {
     q: "Does it send my resume to a third party?",
-    a: "Not in the default configuration. Manual AI Mode means your text is only ever on your screen. If you configure a provider yourself (local AI or your own API key), that request goes to the provider you chose, and the app records that in the interaction log.",
+    a: "Only when you choose an integrated AI action or configure your own provider. The request goes to the selected provider and is recorded in the interaction log. Manual Mode remains available when you prefer to handle the prompt yourself.",
   },
   {
     q: "What happens if an AI provider is unavailable?",

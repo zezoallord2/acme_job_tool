@@ -124,6 +124,10 @@ export interface PlanLimits {
   aiAssistCallsPerDay: number;
   savedApplications: number;
   resumeVersions: number;
+  /** Rows returned by the automatic Jobs for You search. */
+  jobsForYouResults: number;
+  /** Profile-derived queries run per automatic search. */
+  jobsForYouQueries: number;
 }
 
 export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
@@ -133,6 +137,8 @@ export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
     aiAssistCallsPerDay: 20,
     savedApplications: 3,
     resumeVersions: 1,
+    jobsForYouResults: 5,
+    jobsForYouQueries: 2,
   },
   COMPLETE: {
     starStories: Number.POSITIVE_INFINITY,
@@ -140,6 +146,8 @@ export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
     aiAssistCallsPerDay: Number.POSITIVE_INFINITY,
     savedApplications: Number.POSITIVE_INFINITY,
     resumeVersions: Number.POSITIVE_INFINITY,
+    jobsForYouResults: 30,
+    jobsForYouQueries: 6,
   },
 };
 
@@ -160,17 +168,17 @@ export const PRICING: PricingTier[] = [
     launchPriceUsd: 0,
     regularPriceUsd: 0,
     features: [
-      "Career Snapshot",
-      "Basic career evidence ledger",
+      "Quick Profile",
+      "Basic experience history",
       "Resume Quick Check",
-      "Basic Job Description Analyzer",
-      "Basic Evidence Matrix",
+      "Basic Job Check",
+      "Basic Match Breakdown",
       "Basic resume tailoring",
       "One STAR story",
-      "Five-question AI Mock Interview",
+      "Five-question Practice Interview",
       "30-minute guided workflow",
       "Free Starter Guide",
-      "Limited Ask Acme",
+      "Limited Acme Assistant",
     ],
   },
   {
@@ -180,30 +188,30 @@ export const PRICING: PricingTier[] = [
     launchPriceUsd: 9.99,
     regularPriceUsd: 14.99,
     features: [
-      "Full Career Master Profile",
-      "Full Evidence Ledger + Achievement Mining",
-      "Target Role Blueprint",
-      "Deep Job Analyzer + full Evidence Matrix",
-      "Apply / Review / Skip recommendation",
-      "Effort vs Opportunity comparison",
-      "Master Resume + multiple versions",
-      "Advanced tailoring + Resume Bullet Builder",
-      "Claim Inspector",
-      "Cross-Document Consistency Engine",
-      "Application Readiness Gate",
-      "Cover Letter Builder + LinkedIn Optimizer",
-      "Application Question Builder",
-      "Personal Voice Profile + Career Narrative Engine",
-      "Full STAR Story Bank",
-      "Advanced Mock Interviews + Defend This Claim",
-      "Interview Command Center + Post-Interview Review",
-      "Follow-Up Builder",
-      "Application Capsule + Immutable Sent Versions",
-      "Application Tracker + Analytics",
+      "Full My Profile",
+      "Full My Experience + Find My Wins",
+      "Job Goals",
+      "Deep Job Analyzer + full Match Breakdown",
+      "Should I Apply? recommendation",
+      "Best Jobs comparison",
+      "My Resume + multiple versions",
+      "Advanced tailoring + Improve Bullet",
+      "Truth Check",
+      "Consistency Check",
+      "Ready to Apply?",
+      "Cover Letter + LinkedIn",
+      "Application Answers",
+      "Writing Style + Career Story",
+      "Full Interview Stories",
+      "Advanced Mock Interviews + Can I Defend This?",
+      "Interview Prep + Interview Review",
+      "Follow-Up Message",
+      "Application Details + Immutable Sent Versions",
+      "My Applications + Analytics",
       "Career Learning Review",
-      "Daily Priority Engine",
-      "Ask Acme",
-      "14-Day Job Search Sprint",
+      "Today's Tasks",
+      "Acme Assistant",
+      "14-Day Plan",
       "Complete Edition PDF access",
     ],
   },

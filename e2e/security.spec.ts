@@ -38,7 +38,7 @@ test("a seeded free user can sign in and is on the Starter plan", async ({
   await signIn(page, "free@acmejobs.local");
   await expect(page.getByText("Starter").first()).toBeVisible();
   await expect(
-    page.getByRole("link", { name: /Analyze a Job/i }).first(),
+    page.getByRole("link", { name: /Find Jobs/i }).first(),
   ).toBeVisible();
 });
 
@@ -50,7 +50,7 @@ test("a seeded paid user can sign in and has paid features unlocked", async ({
 
   await page.goto("/app/claims");
   await expect(
-    page.getByRole("heading", { name: "Claim Inspector" }),
+    page.getByRole("heading", { name: "Truth Check" }),
   ).toBeVisible();
   await expect(page.getByText(/Free view/i)).toHaveCount(0);
 });

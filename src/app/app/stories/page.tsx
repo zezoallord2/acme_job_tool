@@ -39,9 +39,7 @@ export default async function StoriesPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          STAR Story Bank
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Interview Stories</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Reusable answers in your own words. Each story links to the evidence
           that supports it, so a weak story is visible before an interview

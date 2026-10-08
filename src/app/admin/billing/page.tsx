@@ -105,9 +105,7 @@ export default async function BillingDiagnosticsPage({
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Billing diagnostics
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Billing diagnostics</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Every Whop webhook this deployment has seen, and what became of it. No
           payment details are stored or shown: only the fields needed to grant

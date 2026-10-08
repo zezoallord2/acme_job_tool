@@ -72,7 +72,7 @@ export function PostReviewForm({
       <Field
         label="What experience did you remember having?"
         htmlFor="p-remembered"
-        hint="Anything you said in the interview that is not yet in your Evidence Ledger. This is what becomes a proposal."
+        hint="Anything you said in the interview that is not yet in My Experience. This is what becomes a proposal."
       >
         <textarea
           id="p-remembered"

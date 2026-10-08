@@ -15,10 +15,14 @@ export function StudioSection({
   workflow,
   descriptor,
   can,
+  initialValues = {},
+  open = false,
 }: {
   workflow: { id: string; title: string; description: string };
   descriptor: StudioDescriptorView | null;
   can: boolean;
+  initialValues?: Record<string, string>;
+  open?: boolean;
 }) {
   if (!can || !descriptor) {
     return (
@@ -38,7 +42,7 @@ export function StudioSection({
   }
 
   return (
-    <details className="card-muted p-4">
+    <details className="card-muted p-4" open={open}>
       <summary className="cursor-pointer">
         <span className="text-sm font-semibold text-[var(--text)]">
           {workflow.title}
@@ -48,7 +52,7 @@ export function StudioSection({
         </p>
       </summary>
       <div className="mt-4">
-        <StudioPanel descriptor={descriptor} />
+        <StudioPanel descriptor={descriptor} initialValues={initialValues} />
       </div>
     </details>
   );

@@ -11,12 +11,10 @@ export default async function NewSkillPage() {
   return (
     <div className="mx-auto max-w-[560px] space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Add a skill
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Add a skill</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           Only add skills you could defend if asked. An unmatched skill becomes
-          a critical gap in the evidence matrix.
+          a critical gap in the match breakdown.
         </p>
       </header>
       <Card>

@@ -10,7 +10,7 @@ import type {
 } from "@prisma/client";
 
 /**
- * Evidence Ledger service. Owns verification transitions so that no caller can
+ * My Experience service. Owns verification transitions so that no caller can
  * promote an inferred record into a fact without an explicit user action.
  */
 

@@ -12,7 +12,7 @@ import type { JobInputSource, RequirementPriority } from "@prisma/client";
 
 /**
  * Job service: input, analysis persistence, requirement extraction and the
- * Evidence Matrix. Analysis is stored with full workflow/prompt/validator version
+ * Match Breakdown. Analysis is stored with full workflow/prompt/validator version
  * metadata so any output can be traced back to how it was produced.
  */
 
@@ -27,6 +27,7 @@ export const JobInputSchema = z.object({
   deadlineAt: z.coerce.date().nullable().optional(),
   contactEmail: z.string().trim().email().max(200).nullable().optional(),
   sourceName: z.string().trim().max(200).nullable().optional(),
+  sourceUrl: z.string().trim().url().max(2000).nullable().optional(),
   inputSource: z
     .enum(["PASTE", "UPLOAD_PDF", "UPLOAD_DOCX", "UPLOAD_TXT", "MANUAL"])
     .default("PASTE"),
@@ -63,6 +64,7 @@ export async function createJob(userId: string, input: unknown) {
       location: d.location ?? null,
       contactEmail: d.contactEmail ?? null,
       sourceName: d.sourceName ?? null,
+      sourceUrl: d.sourceUrl ?? null,
       rawDescription: d.description,
       descriptionHash,
       wordCount,
@@ -297,7 +299,7 @@ export interface MatrixBuildResult {
   result: ReturnType<typeof computeEvidenceMatrix>;
 }
 
-/** Builds or refreshes the Evidence Matrix for a job. */
+/** Builds or refreshes the Match Breakdown for a job. */
 export async function buildEvidenceMatrix(
   userId: string,
   jobId: string,
@@ -305,7 +307,7 @@ export async function buildEvidenceMatrix(
   const job = await getJob(userId, jobId);
   if (!job.analysis)
     throw Errors.validation(
-      "Analyze the job description before building the evidence matrix.",
+      "Analyze the job description before building the match breakdown.",
     );
 
   const requirements: RequirementInput[] = job.analysis.requirements.map(

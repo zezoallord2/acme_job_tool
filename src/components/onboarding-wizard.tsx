@@ -1,341 +1,215 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { saveOnboardingStepAction } from "@/app/actions/onboarding-actions";
-import { IDLE, type ActionState } from "@/app/actions/state";
-import { Field, Alert, ProgressBar } from "@/components/ui/primitives";
-
-type Step =
-  | "FIRST_NAME"
-  | "EXPERIENCE_LEVEL"
-  | "CURRENT_SITUATION"
-  | "TARGET_ROLE"
-  | "TARGET_INDUSTRY"
-  | "CAREER_CHANGER"
-  | "LOCATION_PREFERENCE"
-  | "WORK_PREFERENCE"
-  | "PRIMARY_GOAL";
-
-const ORDER: Step[] = [
-  "FIRST_NAME",
-  "EXPERIENCE_LEVEL",
-  "CURRENT_SITUATION",
-  "TARGET_ROLE",
-  "TARGET_INDUSTRY",
-  "CAREER_CHANGER",
-  "LOCATION_PREFERENCE",
-  "WORK_PREFERENCE",
-  "PRIMARY_GOAL",
-];
-
-const TITLES: Record<Step, { title: string; hint: string }> = {
-  FIRST_NAME: {
-    title: "What should we call you?",
-    hint: "Just a first name is fine.",
-  },
-  EXPERIENCE_LEVEL: {
-    title: "Where are you in your career?",
-    hint: "This changes how much we help you explain your experience.",
-  },
-  CURRENT_SITUATION: {
-    title: "What is your situation right now?",
-    hint: 'One line. For example: "Final-year student, looking for a first role" or "Between roles, three months into a break".',
-  },
-  TARGET_ROLE: {
-    title: "What role are you targeting?",
-    hint: "One role is more useful than five.",
-  },
-  TARGET_INDUSTRY: {
-    title: "Any industry preference?",
-    hint: "Optional. Leave blank if you are open.",
-  },
-  CAREER_CHANGER: {
-    title: "Are you changing careers?",
-    hint: "This unlocks the career-change narrative tools in Complete Edition.",
-  },
-  LOCATION_PREFERENCE: {
-    title: "Where do you want to work?",
-    hint: "Optional city or region. No precise address is ever required.",
-  },
-  WORK_PREFERENCE: {
-    title: "Remote, hybrid or on-site?",
-    hint: "Used to prioritise roles that match how you want to work.",
-  },
-  PRIMARY_GOAL: {
-    title: "What matters most right now?",
-    hint: "This drives your Daily Priorities.",
-  },
-};
-
-const EXPERIENCE_OPTIONS = [
-  { value: "FRESH_GRADUATE", label: "Fresh graduate" },
-  { value: "ENTRY_LEVEL", label: "Early career (0–2 years)" },
-  { value: "MID_LEVEL", label: "Mid-career (3–7 years)" },
-  { value: "SENIOR", label: "Senior (8+ years)" },
-  { value: "EXECUTIVE", label: "Executive" },
-  { value: "CAREER_CHANGER", label: "Career changer" },
-];
-
-const WORK_OPTIONS = [
-  { value: "REMOTE", label: "Remote" },
-  { value: "HYBRID", label: "Hybrid" },
-  { value: "ON_SITE", label: "On-site" },
-  { value: "NO_PREFERENCE", label: "No preference" },
-];
-
-const GOAL_OPTIONS = [
-  { value: "IMPROVE_RESUME", label: "Improve my resume" },
-  { value: "BETTER_TARGETING", label: "Target the right jobs" },
-  { value: "INTERVIEW_PREP", label: "Prepare for interviews" },
-  { value: "ORGANIZE_APPLICATIONS", label: "Organise my applications" },
-  { value: "FULL_SYSTEM", label: "Build the full system" },
-];
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { finishSimpleOnboardingAction } from "@/app/actions/onboarding-actions";
+import { CvImportCard } from "@/components/cv-import-card";
+import { Alert, Field, ProgressBar } from "@/components/ui/primitives";
 
 export interface OnboardingInitial {
-  step: Step | string;
   firstName: string | null;
-  experienceLevel: string | null;
-  currentSituation: string | null;
   targetRole: string | null;
-  targetIndustry: string | null;
-  isCareerChanger: boolean | null;
   locationPreference: string | null;
   workArrangement: string | null;
-  primaryGoal: string | null;
 }
+
+const STEPS = ["goal", "cv", "preferences", "ready"] as const;
 
 export function OnboardingWizard({
   initial,
 }: {
   initial: OnboardingInitial | null;
 }) {
-  const [step, setStep] = useState<Step>(() => {
-    const s = initial?.step as Step | undefined;
-    return s && ORDER.includes(s) ? s : "FIRST_NAME";
-  });
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    saveOnboardingStepAction as never,
-    IDLE,
+  const router = useRouter();
+  const [step, setStep] = useState(0);
+  const [targetRole, setTargetRole] = useState(initial?.targetRole ?? "");
+  const [firstName, setFirstName] = useState(initial?.firstName ?? "");
+  const [location, setLocation] = useState(initial?.locationPreference ?? "");
+  const [work, setWork] = useState(initial?.workArrangement ?? "NO_PREFERENCE");
+  const [state, action, pending] = useActionState(
+    finishSimpleOnboardingAction,
+    { ok: false, message: "" },
   );
-  const index = ORDER.indexOf(step);
-  const meta = TITLES[step];
 
-  // Focus the first field of whichever step is showing. Done in an effect rather
-  // than with `autoFocus`, which fires before hydration and can move focus out
-  // from under a keyboard or screen-reader user.
-  const firstFieldRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    firstFieldRef.current?.focus();
-  }, [step]);
+    if (state.ok)
+      router.push(`/app/jobs?title=${encodeURIComponent(targetRole)}`);
+  }, [router, state.ok, targetRole]);
 
+  const current = STEPS[step]!;
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={action} className="space-y-5">
       <ProgressBar
-        value={index / ORDER.length}
-        label={`Step ${index + 1} of ${ORDER.length}`}
+        value={(step + 1) / STEPS.length}
+        label={`Step ${step + 1} of ${STEPS.length}`}
       />
-
-      <input type="hidden" name="step" value={step} />
-
-      <div>
-        <h2 className="text-base font-semibold text-[var(--text)]">
-          {meta.title}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">{meta.hint}</p>
-      </div>
+      <input type="hidden" name="targetRole" value={targetRole} />
+      <input type="hidden" name="firstName" value={firstName} />
+      <input type="hidden" name="locationPreference" value={location} />
+      <input type="hidden" name="workArrangement" value={work} />
 
       {state.message && !state.ok ? (
         <Alert tone="error">{state.message}</Alert>
       ) : null}
 
-      {step === "FIRST_NAME" ? (
-        <Field label="First name" htmlFor="firstName" required>
-          <input
-            id="firstName"
-            name="firstName"
-            className="input"
-            defaultValue={initial?.firstName ?? ""}
-            maxLength={80}
-            required
-            ref={firstFieldRef}
-          />
-        </Field>
-      ) : null}
-
-      {step === "EXPERIENCE_LEVEL" ? (
-        <RadioGroup
-          name="experienceLevel"
-          options={EXPERIENCE_OPTIONS}
-          defaultValue={initial?.experienceLevel ?? ""}
-        />
-      ) : null}
-
-      {step === "CURRENT_SITUATION" ? (
-        <Field label="Current situation" htmlFor="currentSituation" required>
-          <textarea
-            id="currentSituation"
-            name="currentSituation"
-            className="input"
-            style={{ minHeight: 84 }}
-            defaultValue={initial?.currentSituation ?? ""}
-            maxLength={300}
-            required
-          />
-        </Field>
-      ) : null}
-
-      {step === "TARGET_ROLE" ? (
-        <Field label="Target role" htmlFor="targetRole" required>
-          <input
-            id="targetRole"
-            name="targetRole"
-            className="input"
-            placeholder="Data Analyst"
-            defaultValue={initial?.targetRole ?? ""}
-            maxLength={120}
-            required
-          />
-        </Field>
-      ) : null}
-
-      {step === "TARGET_INDUSTRY" ? (
-        <Field
-          label="Target industry"
-          htmlFor="targetIndustry"
-          hint="Optional."
-        >
-          <input
-            id="targetIndustry"
-            name="targetIndustry"
-            className="input"
-            defaultValue={initial?.targetIndustry ?? ""}
-            maxLength={120}
-          />
-        </Field>
-      ) : null}
-
-      {step === "CAREER_CHANGER" ? (
-        <RadioGroup
-          name="isCareerChanger"
-          options={[
-            { value: "false", label: "No — continuing in the same field" },
-            { value: "true", label: "Yes — moving into a different field" },
-          ]}
-          defaultValue={
-            initial?.isCareerChanger === null ||
-            initial?.isCareerChanger === undefined
-              ? ""
-              : String(initial.isCareerChanger)
-          }
-        />
-      ) : null}
-
-      {step === "LOCATION_PREFERENCE" ? (
-        <Field
-          label="Location preference"
-          htmlFor="locationPreference"
-          hint="Optional. A city or region is enough."
-        >
-          <input
-            id="locationPreference"
-            name="locationPreference"
-            className="input"
-            defaultValue={initial?.locationPreference ?? ""}
-            maxLength={120}
-          />
-        </Field>
-      ) : null}
-
-      {step === "WORK_PREFERENCE" ? (
-        <RadioGroup
-          name="workArrangement"
-          options={WORK_OPTIONS}
-          defaultValue={initial?.workArrangement ?? ""}
-        />
-      ) : null}
-
-      {step === "PRIMARY_GOAL" ? (
-        <>
-          <RadioGroup
-            name="primaryGoal"
-            options={GOAL_OPTIONS}
-            defaultValue={initial?.primaryGoal ?? ""}
-          />
-          <Alert tone="success" title="Your Career Snapshot is ready">
-            Next: analyze your first job. Acme Jobs will compare its
-            requirements against your evidence and tell you honestly what is
-            strong, partial and missing.
-          </Alert>
-        </>
-      ) : null}
-
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="flex gap-2">
-          {index > 0 ? (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setStep(ORDER[index - 1]!)}
-            >
-              Back
-            </button>
-          ) : null}
-          <Link href="/app" className="btn-ghost">
-            Skip for now
-          </Link>
+      {current === "goal" ? (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">
+              What job are you looking for?
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Start with one clear title. You can change it whenever you search.
+            </p>
+          </div>
+          <Field label="Target job title" htmlFor="ob-role">
+            <input
+              id="ob-role"
+              className="input"
+              value={targetRole}
+              onChange={(e) => setTargetRole(e.target.value)}
+              placeholder="Data analyst"
+              required
+            />
+          </Field>
+          <Field
+            label="What should we call you?"
+            htmlFor="ob-name"
+            hint="Optional if it is already on your CV."
+          >
+            <input
+              id="ob-name"
+              className="input"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+            />
+          </Field>
         </div>
+      ) : null}
 
-        {index >= ORDER.length - 1 ? (
-          <Link href="/app/jobs/new" className="btn-primary">
-            Analyze Your First Job
-          </Link>
+      {current === "cv" ? (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">
+              Add your experience
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Fastest option: upload your CV, review what Acme found, then
+              confirm it. Nothing is saved before your review.
+            </p>
+          </div>
+          <CvImportCard hasProfile={false} isComplete={false} />
+          <p className="text-sm text-[var(--text-muted)]">
+            No CV handy? Skip this step and add your experience manually from
+            Profile later.
+          </p>
+        </div>
+      ) : null}
+
+      {current === "preferences" ? (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">
+              Where and how do you want to work?
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              These preferences help rank jobs. They never hide results
+              permanently.
+            </p>
+          </div>
+          <Field
+            label="Location"
+            htmlFor="ob-location"
+            hint="City, country, region, or leave blank."
+          >
+            <input
+              id="ob-location"
+              className="input"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Cairo"
+            />
+          </Field>
+          <fieldset className="space-y-2">
+            <legend className="label">Work style</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                ["NO_PREFERENCE", "Any"],
+                ["REMOTE", "Remote"],
+                ["HYBRID", "Hybrid"],
+                ["ON_SITE", "On-site"],
+              ].map(([value, label]) => (
+                <label
+                  key={value}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border p-3"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <input
+                    type="radio"
+                    checked={work === value}
+                    onChange={() => setWork(value)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      ) : null}
+
+      {current === "ready" ? (
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-accent-soft)] text-xl text-[var(--brand-accent)]">
+            ✓
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">
+              Ready to see jobs for you
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Acme will search real public job listings for{" "}
+              <strong>{targetRole || "your target role"}</strong>, explain the
+              match, and keep anything you save organized.
+            </p>
+          </div>
+          <Alert tone="info">
+            AI suggestions are drafts. You always review factual claims before
+            they enter your profile, resume or application.
+          </Alert>
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3 pt-2">
+        <button
+          type="button"
+          className="btn-ghost"
+          disabled={step === 0 || pending}
+          onClick={() => setStep((value) => Math.max(0, value - 1))}
+        >
+          Back
+        </button>
+        {step < STEPS.length - 1 ? (
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={step === 0 && !targetRole.trim()}
+            onClick={() =>
+              setStep((value) => Math.min(STEPS.length - 1, value + 1))
+            }
+          >
+            {current === "cv" ? "Continue" : "Next"}
+          </button>
         ) : (
           <button
             type="submit"
             className="btn-primary"
-            disabled={pending}
-            onClick={() => {
-              const next = ORDER[index + 1];
-              if (next) window.setTimeout(() => setStep(next), 50);
-            }}
+            disabled={pending || !targetRole.trim()}
           >
-            {pending ? "Saving…" : "Save and continue"}
+            {pending ? "Finding jobs…" : "Show my Jobs for You"}
           </button>
         )}
       </div>
     </form>
-  );
-}
-
-function RadioGroup({
-  name,
-  options,
-  defaultValue,
-}: {
-  name: string;
-  options: Array<{ value: string; label: string }>;
-  defaultValue: string;
-}) {
-  return (
-    <fieldset className="space-y-2">
-      <legend className="label">Choose one</legend>
-      {options.map((o) => (
-        <label
-          key={o.value}
-          className="flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <input
-            type="radio"
-            name={name}
-            value={o.value}
-            defaultChecked={defaultValue === o.value}
-            className="accent-[var(--brand-accent)]"
-          />
-          <span className="text-[var(--text)]">{o.label}</span>
-        </label>
-      ))}
-    </fieldset>
   );
 }

@@ -7,7 +7,7 @@ import type {
 import { extractMetrics, judgeDefense } from "./evidence";
 
 /**
- * Application Readiness Gate. This is explicitly NOT an "ATS score" — it is a
+ * Ready to Apply?. This is explicitly NOT an "ATS score" — it is a
  * list of concrete blocking conditions plus a status.
  */
 

@@ -358,7 +358,7 @@ export async function proposalAction(_prev: unknown, formData: FormData) {
       ok: true,
       message:
         decision === "ACCEPT"
-          ? "Added to your Evidence Ledger."
+          ? "Added to My Experience."
           : "Proposal dismissed.",
     };
   } catch (e) {

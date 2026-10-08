@@ -61,7 +61,7 @@ export default async function GuidePage() {
     <div className="space-y-5">
       <header>
         <p className="eyebrow">A simple path through Acme Jobs</p>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text)]">
+        <h1 className="mt-1 page-title text-[var(--text)]">
           What each part does
         </h1>
         <p className="mt-1 max-w-3xl text-sm text-[var(--text-muted)]">
@@ -108,7 +108,7 @@ export default async function GuidePage() {
             </dd>
           </div>
           <div className="card-muted p-3">
-            <dt className="font-semibold text-[var(--text)]">Ask Acme</dt>
+            <dt className="font-semibold text-[var(--text)]">Acme Assistant</dt>
             <dd className="mt-1 text-[var(--text-muted)]">
               Ask questions about your saved facts, applications and deadlines.
             </dd>

@@ -41,9 +41,7 @@ export default async function ApplicationsPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-            Applications
-          </h1>
+          <h1 className="page-title text-[var(--text)]">Applications</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
             Every application keeps a permanent capsule of exactly what you
             sent.
@@ -81,7 +79,7 @@ export default async function ApplicationsPage() {
       {rows.length === 0 ? (
         <EmptyState
           title="Your job hunt starts here."
-          description="Add a job description and Acme Jobs will build the application record, the evidence matrix and the next action for you."
+          description="Add a job description and Acme Jobs will build the application record, the match breakdown and the next action for you."
           action={
             <Link href="/app/jobs/new" className="btn-primary">
               Analyze Your First Job
@@ -92,7 +90,7 @@ export default async function ApplicationsPage() {
         <Card>
           <CardHeader
             title="Application tracker"
-            description="Sortable table. Every row opens the Application Capsule."
+            description="Sortable table. Every row opens the Application Details."
           />
           <TrackerTable rows={rows} />
         </Card>

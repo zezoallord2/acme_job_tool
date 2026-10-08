@@ -31,15 +31,15 @@ export default async function SignupPage() {
             Create your free account
           </h1>
           <p className="mt-1 mb-5 text-sm text-[var(--text-muted)]">
-            Free forever for Career Snapshot, Job Analyzer, basic tailoring, one
+            Free forever for Quick Profile, Job Analyzer, basic tailoring, one
             STAR story and a five-question mock interview. No credit card.
           </p>
           <AuthForm mode="signup" />
         </div>
 
         <p className="mt-5 text-center text-xs text-[var(--text-muted)]">
-          Acme Jobs never sends your data to a third party. Works with no paid
-          AI service: Manual Mode is built in.
+          Your work stays saved even if an AI provider is unavailable. Manual
+          Mode is always available as a no-cost fallback.
         </p>
       </div>
     </main>

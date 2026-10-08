@@ -94,39 +94,30 @@ test("free user journey: signup -> snapshot -> evidence -> job -> matrix -> upgr
     await page.getByRole("button", { name: /Create account/i }).click();
     await page.waitForURL(/\/onboarding/, { timeout: 45_000 });
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByText("Career Snapshot").first()).toBeVisible();
+    await expect(
+      page.getByText(/Let's get you job-ready/i).first(),
+    ).toBeVisible();
   });
 
-  await test.step("onboarding records the career snapshot", async () => {
-    await page.getByLabel("First name").fill("Evan");
-    await page.getByRole("button", { name: /Save and continue/i }).click();
-
-    await page.getByRole("radio", { name: "Fresh graduate" }).check();
-    await page.getByRole("button", { name: /Save and continue/i }).click();
-
-    await page
-      .getByLabel("Current situation")
-      .fill("Final-year undergraduate looking for a first analyst role.");
-    await page.getByRole("button", { name: /Save and continue/i }).click();
-
-    await page.getByLabel("Target role").fill("Data Analyst");
-    await page.getByRole("button", { name: /Save and continue/i }).click();
-
-    // Skip the optional steps until the goal step.
-    for (let i = 0; i < 4; i++) {
-      const goalRadio = page.getByRole("radio", { name: "Improve my resume" });
-      if (await goalRadio.isVisible().catch(() => false)) break;
-      await page.getByRole("button", { name: /Save and continue/i }).click();
-      await page.waitForTimeout(400);
-    }
-    await page.getByRole("radio", { name: "Improve my resume" }).check();
-    // The final step swaps the save button for the primary call to action.
-    await page
-      .getByRole("link", { name: /Analyze Your First Job/i })
-      .waitFor({ timeout: 20_000 });
-    await expect(page.getByText(/Career Snapshot is ready/i)).toBeVisible({
-      timeout: 30_000,
-    });
+  await test.step("onboarding records the job goal and preferences", async () => {
+    await page.getByLabel("Target job title").fill("Data Analyst");
+    await page.getByLabel("What should we call you?").fill("Evan");
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Add your experience" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel("Location").fill("Manchester");
+    await page.getByRole("radio", { name: "Remote" }).check();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Ready to see jobs for you" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: /Show my Jobs for You/i }).click();
+    await page.waitForURL(/\/app\/jobs/, { timeout: 45_000 });
+    await expect(
+      page.getByRole("heading", { name: "Jobs for You" }),
+    ).toBeVisible();
   });
 
   await test.step("dashboard shows real empty states", async () => {
@@ -135,8 +126,9 @@ test("free user journey: signup -> snapshot -> evidence -> job -> matrix -> upgr
       page.getByRole("heading", { name: /Welcome back/i }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Your job hunt starts here/i).first(),
+      page.getByText(/What would you like to do today\?/i),
     ).toBeVisible();
+    await expect(page.getByText(/Today's Tasks/i).first()).toBeVisible();
   });
 
   await test.step("the evidence ledger records a real achievement", async () => {
@@ -176,6 +168,8 @@ test("free user journey: signup -> snapshot -> evidence -> job -> matrix -> upgr
     ).toBeVisible();
     await expect(page.getByText(/Manual Mode/i).first()).toBeVisible();
 
+    await page.getByText(/Manual Mode \(advanced fallback\)/i).click();
+
     const promptBox = page.getByLabel("AI prompt to copy");
     await expect(promptBox).toBeVisible();
     const prompt = await promptBox.inputValue();
@@ -190,13 +184,13 @@ test("free user journey: signup -> snapshot -> evidence -> job -> matrix -> upgr
 
     // Saving re-renders the page with the persisted analysis and its matrix.
     await expect(
-      page.getByRole("heading", { name: "Evidence matrix" }),
+      page.getByRole("heading", { name: "Match breakdown" }),
     ).toBeVisible({ timeout: 60_000 });
   });
 
   await test.step("the free view shows honest coverage and the upgrade boundary", async () => {
     await expect(
-      page.getByRole("heading", { name: "Evidence matrix" }),
+      page.getByRole("heading", { name: "Match breakdown" }),
     ).toBeVisible();
 
     // A mandatory certification the user does not hold drives the recommendation,
@@ -216,7 +210,7 @@ test("free user journey: signup -> snapshot -> evidence -> job -> matrix -> upgr
   await test.step("the free upgrade boundary is enforced and explained", async () => {
     await page.goto("/app/claims");
     await expect(
-      page.getByRole("heading", { name: "Claim Inspector" }),
+      page.getByRole("heading", { name: "Truth Check" }),
     ).toBeVisible();
     await expect(page.getByText(/Free view/i)).toBeVisible();
 
@@ -228,8 +222,8 @@ test("free user journey: signup -> snapshot -> evidence -> job -> matrix -> upgr
     await expect(page.getByText(/\$0/).first()).toBeVisible();
   });
 
-  await test.step("the follow-up link Ask Acme suggests is a working page", async () => {
-    // Ask Acme offers "Open follow-ups" when nothing is due; that link used to
+  await test.step("the follow-up link Acme Assistant suggests is a working page", async () => {
+    // Acme Assistant offers "Open follow-ups" when nothing is due; that link used to
     // 404, so it is asserted here rather than left as a dead end.
     await page.goto("/app/ask");
     await page.getByLabel("Your question").fill("Any overdue follow-ups?");

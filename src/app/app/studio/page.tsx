@@ -83,9 +83,7 @@ export default async function StudioPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Writing Studio
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Writing Studio</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Every writing tool in one place. Each one works in Manual Mode by
           default, so it costs $0 and needs no API key: copy the prompt, use any
@@ -100,7 +98,7 @@ export default async function StudioPage() {
       >
         {unlocked > 0
           ? "Generated text is always a draft. Read it, check the cited evidence, then decide."
-          : "These tools are part of Complete Edition. Your Starter plan still includes the full Evidence Ledger, job analysis, evidence matrix and a five-question mock interview."}
+          : "These tools are part of Complete Edition. Your Starter plan still includes the full My Experience, job analysis, match breakdown and a five-question mock interview."}
       </Alert>
 
       {groups.map((group) => (

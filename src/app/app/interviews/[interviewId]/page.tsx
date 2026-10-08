@@ -12,7 +12,7 @@ import {
 import { formatDateTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Interview Command Center" };
+export const metadata = { title: "Interview Prep" };
 
 export default async function InterviewDetailPage({
   params,
@@ -37,7 +37,7 @@ export default async function InterviewDetailPage({
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+          <h1 className="page-title text-[var(--text)]">
             {interview.company} · {interview.role}
           </h1>
           <p className="mt-0.5 text-sm text-[var(--text-muted)]">
@@ -66,7 +66,7 @@ export default async function InterviewDetailPage({
             </>
           ) : (
             <Link href="/app/settings" className="btn-primary">
-              Upgrade for Command Center
+              Upgrade for Interview Prep
             </Link>
           )}
         </div>
@@ -83,12 +83,12 @@ export default async function InterviewDetailPage({
         >
           {data.usedSentSnapshot
             ? "Everything below is based on exactly what you sent this employer, not on what your resume says now."
-            : "This application has no sealed snapshot, so the Command Center is using your current resume. Seal the application after you send."}
+            : "This application has no sealed snapshot, so Interview Prep is using your current resume. Seal the application after you send."}
         </Alert>
       ) : (
         <Alert tone="info" title="Free view">
-          The Interview Command Center with the sent resume, requirement
-          coverage, likely questions and risks is part of Complete Edition.
+          The Interview Prep with the sent resume, requirement coverage, likely
+          questions and risks is part of Complete Edition.
         </Alert>
       )}
 

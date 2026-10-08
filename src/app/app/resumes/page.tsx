@@ -30,20 +30,18 @@ export default async function ResumesPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Resumes
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Resumes</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-          One Master Resume, then a job-specific version per application.
-          Lineage is preserved so you always know which version went where.
+          Keep one main resume, then tailor a copy for each application. Lineage
+          is preserved so you always know which version went where.
         </p>
       </header>
 
       {!isComplete ? (
         <Alert tone="info" title="Free resume support">
-          You can maintain one Master Resume and get a Resume Quick Check.
-          Complete Edition adds unlimited job-specific versions, lineage,
-          advanced tailoring and the Resume Bullet Builder.
+          You can maintain one resume and get a quick review. Complete Edition
+          adds unlimited job-specific versions, lineage, advanced tailoring and
+          one-click bullet improvements.
         </Alert>
       ) : null}
 
@@ -55,7 +53,7 @@ export default async function ResumesPage() {
 
       <Card>
         <CardHeader
-          title="Master Resume"
+          title="My Resume"
           description="The single source for tailoring. Changing it never alters anything you have already sent."
           action={
             <Link href={`/app/resumes/${master.id}`} className="btn-primary">
@@ -72,7 +70,7 @@ export default async function ResumesPage() {
       {jobVersions.length === 0 ? (
         <EmptyState
           title="No job-specific versions yet"
-          description="Tailor your Master Resume against a job's Evidence Matrix. Every bullet must cite evidence that supports it."
+          description="Tailor your main resume against a job's Match Breakdown. Every bullet must cite evidence that supports it."
           action={
             isComplete ? (
               <Link href="/app/jobs" className="btn-primary">
@@ -89,7 +87,7 @@ export default async function ResumesPage() {
         <Card>
           <CardHeader
             title="Job-specific versions"
-            description="Derived from the Master Resume, linked back to lineage."
+            description="Derived from the main resume, linked back to lineage."
           />
           <div className="table-wrap">
             <table className="data">
@@ -136,7 +134,7 @@ export default async function ResumesPage() {
       <Card>
         <CardHeader
           title="Revision history"
-          description="Every saved version of your Master Resume can be restored."
+          description="Every saved version of your main resume can be restored."
         />
         <ul className="space-y-1.5">
           {lineage.master.versions.slice(0, 10).map((v) => (
@@ -157,6 +155,21 @@ export default async function ResumesPage() {
             </li>
           ))}
         </ul>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Resume checks"
+          description="Advanced checks stay here instead of cluttering the main navigation."
+        />
+        <div className="flex flex-wrap gap-2">
+          <Link href="/app/claims" className="btn-secondary">
+            Truth Check
+          </Link>
+          <Link href="/app/jobs" className="btn-secondary">
+            Choose a Job to Tailor For
+          </Link>
+        </div>
       </Card>
     </div>
   );

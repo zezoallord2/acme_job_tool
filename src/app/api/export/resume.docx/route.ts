@@ -19,8 +19,8 @@ export async function GET() {
     );
 
     const buffer = await buildDocx({
-      title: content.contact.fullName || "Master Resume",
-      subtitle: "Master Resume",
+      title: content.contact.fullName || "My Resume",
+      subtitle: "My Resume",
       contact: [
         content.contact.email,
         content.contact.phone,

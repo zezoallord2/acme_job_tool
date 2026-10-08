@@ -32,9 +32,7 @@ export default async function DiscoverEvidencePage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Discover evidence
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Discover evidence</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Most people have achievements they never wrote down. Describe the work
           in your own words, or let Acme Jobs ask you about one achievement
@@ -58,20 +56,17 @@ export default async function DiscoverEvidencePage() {
 
       {pending.length > 0 ? (
         <Alert tone="info" title={`${pending.length} proposal(s) waiting`}>
-          Nothing here has entered your Evidence Ledger.{" "}
+          Nothing here has entered My Experience.{" "}
           <Link href="/app/learning">Review the proposals</Link> and accept only
           what you can defend in an interview.
         </Alert>
       ) : null}
 
       {!canMine ? (
-        <Alert
-          tone="info"
-          title="Achievement Mining is a Complete Edition feature"
-        >
+        <Alert tone="info" title="Find My Wins is a Complete Edition feature">
           Starter can still build the ledger by hand with Add evidence. Complete
-          Edition adds Evidence Extraction and Achievement Mining, which turn
-          what you already know into reviewable proposals.
+          Edition adds Evidence Extraction and Find My Wins, which turn what you
+          already know into reviewable proposals.
         </Alert>
       ) : null}
 
@@ -91,7 +86,7 @@ export default async function DiscoverEvidencePage() {
 
       <Card>
         <CardHeader
-          title="Achievement Mining"
+          title="Find My Wins"
           description="One question at a time until the story holds up: what you did, the problem, the tools, the people, the result, and the number."
         />
         {canMine ? (
@@ -104,9 +99,8 @@ export default async function DiscoverEvidencePage() {
       </Card>
 
       <p className="text-xs text-[var(--text-muted)]">
-        Both tools run in Manual Mode by default, so they cost $0 and need no
-        API key. You copy a prompt, use any assistant you like, and paste the
-        answer back. Acme Jobs validates whatever comes back before it is
+        Use one-click AI when it is available on your plan, or open Manual Mode
+        as a no-cost fallback. Acme Jobs validates every response before it is
         stored.
       </p>
     </div>

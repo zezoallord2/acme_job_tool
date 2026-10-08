@@ -36,9 +36,7 @@ export default async function PracticePage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Mock interview
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Mock interview</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           One question at a time. Answers are scored on relevance, specificity,
           evidence, structure and clarity. There is no hire probability — Acme

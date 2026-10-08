@@ -2,399 +2,305 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { todayPriorities } from "@/services/ask-acme-service";
-import { applicationFunnel } from "@/services/application-service";
-import { evidenceStats } from "@/services/evidence-service";
-import { listPendingProposals } from "@/services/learning-service";
+import { listApplications } from "@/services/application-service";
 import { getEntitlementState } from "@/services/entitlement-service";
-import { UpgradePanel } from "@/components/upgrade-panel";
-import { AiStatusBanner } from "@/components/ai-status-banner";
-import { aiAvailability } from "@/ai/router";
 import { computeCompleteness } from "@/app/actions/onboarding-actions";
+import { aiAvailability } from "@/ai/router";
+import { searchForYou, type JobsForYouResult } from "@/jobs/discovery";
+import { CvImportCard } from "@/components/cv-import-card";
+import { AiStatusBanner } from "@/components/ai-status-banner";
+import { PriorityList } from "@/components/priority-list";
 import {
   Card,
   CardHeader,
-  Stat,
   EmptyState,
-  StatusBadge,
-  FitBadge,
-  Alert,
   ProgressBar,
+  StatusBadge,
 } from "@/components/ui/primitives";
-import { PriorityList } from "@/components/priority-list";
-import { FunnelBar } from "@/components/funnel-bar";
-import { aiAssistUsageToday } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Dashboard" };
-
-const FUNNEL_STAGES = [
-  { key: "SAVED", label: "Saved" },
-  { key: "APPLIED", label: "Applied" },
-  { key: "SCREENING", label: "Screening" },
-  { key: "INTERVIEW", label: "Interview" },
-  { key: "FINAL_INTERVIEW", label: "Final" },
-  { key: "OFFER", label: "Offer" },
-  { key: "REJECTED", label: "Rejected" },
-] as const;
+export const metadata = { title: "Home" };
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const entitlement = await getEntitlementState(user.id);
-  const aiStatus = await aiAvailability();
-  const now = new Date();
-  const in24h = new Date(now.getTime() + 86_400_000);
-
   const [
+    entitlement,
     priorities,
-    funnel,
+    applications,
     completeness,
-    evidence,
-    recent,
-    interviews,
-    followUpsDue,
-    proposals,
-    claimsNeedingAttention,
-    storyCount,
-    resumeCount,
-    aiAssistUsage,
+    aiStatus,
+    profile,
+    skills,
   ] = await Promise.all([
-    entitlement.isComplete ? todayPriorities(user.id) : Promise.resolve([]),
-    applicationFunnel(user.id),
+    getEntitlementState(user.id),
+    todayPriorities(user.id),
+    listApplications(user.id),
     computeCompleteness(user.id),
-    evidenceStats(user.id),
-    prisma.application.findMany({
+    aiAvailability(),
+    prisma.userProfile.findUnique({
       where: { userId: user.id },
-      orderBy: { updatedAt: "desc" },
-      take: 6,
-      include: {
-        job: { select: { company: true, title: true } },
-        matrix: { select: { fitClassification: true } },
-      },
+      select: { firstName: true, locationCity: true, workArrangement: true },
     }),
-    prisma.interview.findMany({
-      where: { userId: user.id, scheduledAt: { gte: now, lte: in24h } },
-      orderBy: { scheduledAt: "asc" },
-      include: { application: { select: { id: true } } },
+    prisma.skill.findMany({
+      where: { userId: user.id },
+      orderBy: [{ isCore: "desc" }, { sortOrder: "asc" }],
+      take: 20,
+      select: { name: true },
     }),
-    prisma.followUp.count({
-      where: { userId: user.id, status: "DRAFT", scheduledFor: { lte: now } },
-    }),
-    listPendingProposals(user.id),
-    prisma.generatedClaim.count({
-      where: {
-        userId: user.id,
-        verificationState: {
-          in: ["UNSUPPORTED", "NEEDS_CONFIRMATION", "CONFLICTED"],
-        },
-      },
-    }),
-    prisma.starStory.count({ where: { userId: user.id } }),
-    prisma.resumeVersion.count({
-      where: { resume: { userId: user.id } },
-    }),
-    entitlement.isComplete ? Promise.resolve(0) : aiAssistUsageToday(user.id),
   ]);
 
-  const activeCount = [
-    "SAVED",
-    "ANALYZING",
-    "READY_TO_APPLY",
-    "APPLIED",
-    "SCREENING",
-    "INTERVIEW",
-    "FINAL_INTERVIEW",
-  ].reduce((sum, s) => sum + (funnel[s as keyof typeof funnel] ?? 0), 0);
-  const offers = funnel.OFFER ?? 0;
-  const offerCount = offers;
-
-  const firstRun = recent.length === 0 && completeness < 30;
-
-  // Only shown to Free accounts: telling a paying customer what they are missing
-  // would be nonsense.
-  const freeUsage = entitlement.isComplete
-    ? null
-    : [
-        {
-          label: "Saved applications",
-          used: recent.length,
-          limit: entitlement.limits.savedApplications,
-          hint: "Applications you are actively tracking.",
-        },
-        {
-          label: "Resume versions",
-          used: resumeCount,
-          limit: entitlement.limits.resumeVersions,
-          hint: "One tailored version per job keeps your CV honest.",
-        },
-        {
-          label: "STAR stories",
-          used: storyCount,
-          limit: entitlement.limits.starStories,
-          hint: "Reusable interview answers built from your evidence.",
-        },
-        {
-          label: "Mock interview questions",
-          used: 0,
-          limit: entitlement.limits.mockInterviewQuestions,
-          hint: "Practice questions per session.",
-        },
-        {
-          label: "AI-assisted actions per day",
-          used: Math.min(aiAssistUsage, entitlement.limits.aiAssistCallsPerDay),
-          limit: entitlement.limits.aiAssistCallsPerDay,
-          hint: "Resets at midnight, your local time.",
-        },
-      ];
+  // Same service, same pipeline and same limits as the Jobs for You page.
+  const jobsDiscovery: JobsForYouResult | null = await searchForYou({
+    userId: user.id,
+    maxResults: entitlement.isComplete ? 4 : 2,
+  }).catch(() => null);
+  const jobsForYou = jobsDiscovery?.results ?? [];
+  const jobsGoal = jobsDiscovery?.profile.primaryTargetRoles[0] ?? null;
+  const active = applications.filter(
+    (application) =>
+      !["OFFER", "REJECTED", "WITHDRAWN", "ARCHIVED"].includes(
+        application.status,
+      ),
+  );
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-            {user.name
-              ? `Welcome back, ${user.name.split(" ")[0]}`
-              : "Welcome back"}
-          </h1>
-          <p className="mt-0.5 text-sm text-[var(--text-muted)]">
-            Your experience. AI-assisted. Never invented.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/app/jobs/new" className="btn-primary">
-            Analyze a Job
-          </Link>
-          <Link href="/app/applications" className="btn-secondary">
-            Continue Your Application
-          </Link>
-        </div>
+    <div className="dashboard-page space-y-7">
+      <header className="dashboard-hero border-b border-[var(--border)] pb-7 pt-4">
+        <p className="text-sm font-medium text-[var(--text-muted)]">
+          {entitlement.isComplete ? "Complete plan" : "Starter plan"}
+        </p>
+        <h1 className="page-title mt-2">
+          {profile?.firstName
+            ? `Welcome back, ${profile.firstName}`
+            : "Welcome back"}
+        </h1>
+        <p className="lede mt-2">What would you like to do today?</p>
       </header>
 
-      {firstRun ? (
-        <Alert tone="info" title="Your job hunt starts here.">
-          Add what you have actually done, then paste one job description. Acme
-          Jobs will tell you which requirements you can already prove — and
-          which you cannot.
-        </Alert>
-      ) : null}
+      <section
+        aria-label="Quick actions"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {[
+          {
+            href: "/app/jobs",
+            title: "Find Jobs",
+            detail: "See openings matched to your profile",
+          },
+          {
+            href: "/app/resumes",
+            title: "Tailor Resume",
+            detail: "Adapt your resume for one job",
+          },
+          {
+            href: "/app/interviews/practice",
+            title: "Practice Interview",
+            detail: "Get role-specific questions",
+          },
+          {
+            href: "/app/profile",
+            title: "Update Profile",
+            detail: "Add skills, wins or a new CV",
+          },
+        ].map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="quick-action card block p-4 no-underline"
+          >
+            <h2 className="font-semibold text-[var(--text)]">{action.title}</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              {action.detail}
+            </p>
+          </Link>
+        ))}
+      </section>
 
-      {/* The AI state is shown because a broken API key used to look exactly like
-          "the AI is bad": everything silently fell back to Manual Mode. */}
-      {aiStatus.available ? (
-        <AiStatusBanner
-          available
-          providerLabel={aiStatus.label}
-          reason=""
-          fix=""
-        />
-      ) : (
+      {!aiStatus.available ? (
         <AiStatusBanner
           available={false}
           providerLabel=""
           reason={aiStatus.reason}
           fix={aiStatus.fix}
         />
-      )}
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
-        <Stat label="Active applications" value={activeCount} />
-        <Stat
-          label="Interviews"
-          value={interviews.length}
-          tone={interviews.length > 0 ? "warning" : undefined}
-          hint={interviews.length > 0 ? "next 24 hours" : "none scheduled"}
+      ) : null}
+      {completeness < 35 ? (
+        <CvImportCard
+          hasProfile={completeness > 0}
+          isComplete={entitlement.isComplete}
         />
-        <Stat
-          label="Offers"
-          value={offerCount}
-          tone={offerCount > 0 ? "positive" : undefined}
-        />
-        <Stat
-          label="Follow-ups due"
-          value={followUpsDue}
-          tone={followUpsDue > 0 ? "warning" : undefined}
-        />
-        <div className="card-muted px-3 py-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
-            Profile completeness
-          </div>
-          <div className="mt-2">
-            <ProgressBar value={completeness / 100} label="" />
-          </div>
-          <Link
-            href="/app/career"
-            className="mt-2 inline-block text-xs underline"
-          >
-            Improve my profile
-          </Link>
-        </div>
-      </div>
-
-      {claimsNeedingAttention > 0 ? (
-        <Alert
-          tone="warning"
-          title={`${claimsNeedingAttention} generated claim${claimsNeedingAttention === 1 ? "" : "s"} need your decision`}
-          action={
-            <Link href="/app/claims" className="btn-secondary">
-              Open Claim Inspector
-            </Link>
-          }
-        >
-          Unsupported claims block a clean READY status. Confirm, edit or remove
-          them.
-        </Alert>
       ) : null}
 
-      {proposals.length > 0 ? (
-        <Alert
-          tone="info"
-          title={`${proposals.length} evidence proposal${proposals.length === 1 ? "" : "s"} waiting for you`}
-          action={
-            <Link href="/app/learning" className="btn-secondary">
-              Review
-            </Link>
-          }
-        >
-          Acme Jobs noticed something you mentioned. Nothing has been added to
-          your career facts until you accept it.
-        </Alert>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <div className="grid gap-4 xl:grid-cols-5">
+        <Card className="xl:col-span-3">
           <CardHeader
-            title="Today's priorities"
+            title="Today's Tasks"
+            description="Based on real dates, unfinished applications and your profile—not generic advice."
+          />
+          <PriorityList items={priorities.slice(0, 5)} />
+        </Card>
+        <Card className="xl:col-span-2">
+          <CardHeader
+            title="Profile setup"
             description={
-              entitlement.isComplete
-                ? "Ranked by your real deadlines: interview proximity, follow-up dates, unfinished work and your goal."
-                : "Complete Edition ranks your real deadlines, unfinished work and highest-value next action."
+              completeness >= 80
+                ? "Your profile has enough detail for useful matching."
+                : "More detail makes job matching and tailoring more useful."
             }
           />
-          {entitlement.isComplete ? (
-            <PriorityList items={priorities} />
-          ) : (
-            <Alert
-              tone="info"
-              title="Daily Priority Engine"
-              action={
-                <Link href="/pricing" className="btn-secondary">
-                  Compare plans
-                </Link>
-              }
-            >
-              Your dashboard and existing work stay available. Upgrade when you
-              want Acme Jobs to rank the next best action across your whole
-              search.
-            </Alert>
-          )}
-        </Card>
-
-        <Card>
-          <CardHeader title="Quick actions" />
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { href: "/app/jobs/new", label: "Analyze Job" },
-              { href: "/app/resumes", label: "Tailor Resume" },
-              { href: "/app/evidence/new", label: "Add Achievement" },
-              { href: "/app/interviews/practice", label: "Practice Interview" },
-              { href: "/app/applications", label: "Add Application" },
-              { href: "/app/stories", label: "Add STAR Story" },
-            ].map((a) => (
-              <Link
-                key={a.href}
-                href={a.href}
-                className="btn-secondary"
-                style={{ justifyContent: "flex-start", textDecoration: "none" }}
-              >
-                {a.label}
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-5">
-            <h3 className="text-sm font-semibold text-[var(--text)]">
-              Evidence ledger
-            </h3>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
-              {evidence.total} record{evidence.total === 1 ? "" : "s"} ·{" "}
-              {evidence.counts.VERIFIED ?? 0} verified ·{" "}
-              {evidence.counts.USER_CONFIRMED ?? 0} confirmed ·{" "}
-              {evidence.counts.UNVERIFIED ?? 0} unverified
-            </p>
-            <Link href="/app/evidence" className="btn-ghost mt-2">
-              Open the ledger
-            </Link>
-          </div>
+          <ProgressBar
+            value={completeness / 100}
+            label={`${completeness}% complete`}
+          />
+          <p className="mt-3 text-sm text-[var(--text-muted)]">
+            {skills.length < 5
+              ? `Add ${5 - skills.length} more skill${5 - skills.length === 1 ? "" : "s"} to improve matching.`
+              : "Add work achievements with real examples to make tailoring stronger."}
+          </p>
+          <Link href="/app/profile" className="btn-secondary mt-4">
+            Improve My Profile
+          </Link>
         </Card>
       </div>
 
-      {freeUsage ? (
-        <UpgradePanel
-          usage={freeUsage}
-          paidCheckout={process.env.WHOP_PAID_CHECKOUT_URL ?? null}
-        />
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
           <CardHeader
-            title="Recent applications"
-            description="Newest first. Open one to continue where you left off."
+            title="Jobs for You"
+            description={
+              jobsGoal
+                ? `Matched using your CV and "${jobsGoal}"`
+                : "Add a job goal to start matching."
+            }
             action={
-              <Link href="/app/applications" className="btn-ghost">
-                View all
+              <Link href="/app/jobs" className="btn-ghost">
+                See all
               </Link>
             }
           />
-          {recent.length === 0 ? (
+          {jobsForYou.length === 0 ? (
             <EmptyState
-              title="Your job hunt starts here."
-              description="Paste a job description and Acme Jobs will build the evidence matrix, so you know before you spend an hour tailoring."
+              title={
+                jobsGoal ? "No matches found right now" : "Add your job goal"
+              }
+              description={
+                jobsGoal
+                  ? "Refresh Jobs for You, or relax the location check there."
+                  : "Tell Acme what role you want so it can search real public listings."
+              }
               action={
-                <Link href="/app/jobs/new" className="btn-primary">
-                  Analyze Your First Job
+                <Link
+                  href={jobsGoal ? "/app/jobs" : "/app/profile"}
+                  className="btn-primary"
+                >
+                  {jobsGoal ? "Open Jobs for You" : "Set job goal"}
                 </Link>
               }
             />
           ) : (
-            <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-              {recent.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex flex-wrap items-center gap-3 py-2.5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/app/applications/${a.id}`}
-                      className="text-sm font-medium text-[var(--text)] underline"
+            <ul
+              className="mt-2 divide-y"
+              style={{ borderColor: "var(--border)" }}
+            >
+              {jobsForYou.map(({ job, fit }) => (
+                <li key={`${job.provider}:${job.externalId}`} className="py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <a
+                        href={job.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium underline"
+                      >
+                        {job.title}
+                      </a>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {job.company} · {job.location}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        fit.label === "Strong Match"
+                          ? "badge badge-strong"
+                          : fit.label === "Good Match"
+                            ? "badge badge-good"
+                            : fit.label === "Possible Match"
+                              ? "badge badge-partial"
+                              : "badge badge-missing"
+                      }
                     >
-                      {a.job?.company ?? "Company not set"}
-                    </Link>
-                    <span className="block truncate text-xs text-[var(--text-muted)]">
-                      {a.job?.title ?? "Role not set"}
-                      {a.nextAction ? ` · ${a.nextAction}` : ""}
+                      {fit.label}
                     </span>
                   </div>
-                  {a.matrix?.fitClassification ? (
-                    <FitBadge fit={a.matrix.fitClassification} />
-                  ) : null}
-                  <StatusBadge status={a.status} />
+                  <p className="mt-2 text-xs text-[var(--text-muted)]">
+                    {fit.reasons[0]}
+                  </p>
                 </li>
               ))}
             </ul>
           )}
+          {!entitlement.isComplete &&
+          jobsDiscovery &&
+          jobsDiscovery.totalMatched > jobsForYou.length ? (
+            <Link
+              href="/pricing"
+              className="mt-3 inline-block text-sm underline"
+            >
+              Unlock {jobsDiscovery.totalMatched - jobsForYou.length} more
+              matches
+            </Link>
+          ) : null}
         </Card>
 
         <Card>
           <CardHeader
-            title="Application funnel"
-            description="Where your applications currently sit."
+            title="My Applications"
+            description={`${active.length} active · ${applications.length} total`}
+            action={
+              <Link href="/app/applications" className="btn-ghost">
+                Open board
+              </Link>
+            }
           />
-          <FunnelBar
-            stages={FUNNEL_STAGES.map((s) => ({
-              label: s.label,
-              value: funnel[s.key] ?? 0,
-            }))}
-          />
+          {applications.length === 0 ? (
+            <EmptyState
+              title="No applications yet"
+              description="Save a job and Acme will keep the next step, resume and interview work together."
+              action={
+                <Link href="/app/jobs" className="btn-primary">
+                  Find a job
+                </Link>
+              }
+            />
+          ) : (
+            <ul
+              className="mt-2 divide-y"
+              style={{ borderColor: "var(--border)" }}
+            >
+              {applications.slice(0, 5).map((application) => (
+                <li
+                  key={application.id}
+                  className="flex items-center gap-3 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/app/applications/${application.id}`}
+                      className="font-medium underline"
+                    >
+                      {application.job?.title ?? "Untitled role"}
+                    </Link>
+                    <p className="truncate text-xs text-[var(--text-muted)]">
+                      {application.job?.company ?? "Company not set"}
+                      {application.nextAction
+                        ? ` · ${application.nextAction}`
+                        : ""}
+                    </p>
+                  </div>
+                  <StatusBadge status={application.status} />
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </div>
     </div>

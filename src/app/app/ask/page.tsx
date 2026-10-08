@@ -6,7 +6,7 @@ import { AskAcmeChat } from "@/components/ask-acme-chat";
 import { AskAcmeInput } from "@/components/ask-acme-input";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Ask Acme" };
+export const metadata = { title: "Acme Assistant" };
 
 const EXAMPLES = [
   "What should I work on today?",
@@ -31,9 +31,7 @@ export default async function AskPage({
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Ask Acme
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Acme Assistant</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Answers come from your structured records only. If Acme Jobs does not
           have the data, it says so rather than inventing history.

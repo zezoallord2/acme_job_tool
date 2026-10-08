@@ -12,15 +12,29 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
-    background_color: "#f7f7f5",
-    theme_color: "#0f3d2e",
+    // Colours taken from public/brand/logo.png.
+    background_color: "#001E54",
+    theme_color: "#001E54",
     categories: ["productivity", "business", "utilities"],
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        // Raster markable, because Android crops the vector unpredictably.
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
         purpose: "maskable",
       },
     ],
@@ -32,13 +46,13 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Paste a job description",
       },
       {
-        name: "Evidence Ledger",
+        name: "My Experience",
         short_name: "Evidence",
         url: "/app/evidence",
         description: "What you can actually prove",
       },
       {
-        name: "Ask Acme",
+        name: "Acme Assistant",
         short_name: "Ask",
         url: "/app/ask",
         description: "Ask about your own data",

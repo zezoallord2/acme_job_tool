@@ -11,7 +11,7 @@ import type {
 } from "@prisma/client";
 
 /**
- * Interviews: Command Center, mock sessions, post-interview review and follow-ups.
+ * Interviews: Interview Prep, mock sessions, post-interview review and follow-ups.
  */
 
 export const InterviewInputSchema = z.object({
@@ -126,7 +126,7 @@ export async function listInterviews(userId: string) {
 }
 
 /**
- * Interview Command Center. Uses the SENT snapshot when one exists so the user
+ * Interview Prep. Uses the SENT snapshot when one exists so the user
  * prepares against exactly what the employer received.
  */
 export async function interviewCommandCenter(

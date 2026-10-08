@@ -3,84 +3,36 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+/**
+ * Navigation.
+ *
+ * Written by asking one question of every label: "if you had never seen this
+ * product, would you know what this screen does?" The previous set failed that
+ * test badly -- "Evidence & Proof", "Check AI Claims", "Suggested Facts" and
+ * "Best Jobs" are internal vocabulary, not user vocabulary.
+ *
+ * The order is the order a person actually works in: fix the CV, find a job,
+ * track it, prepare for the interview. Everything else follows.
+ *
+ * URLs are unchanged; only the words a user reads moved.
+ */
 export const NAV_ITEMS = [
-  { href: "/app", label: "Dashboard", short: "Home", icon: "grid" },
-  {
-    href: "/app/guide",
-    label: "How Acme Works",
-    short: "Guide",
-    icon: "map",
-  },
-  {
-    href: "/app/career",
-    label: "Career Profile",
-    short: "Career",
-    icon: "user",
-  },
-  {
-    href: "/app/evidence",
-    label: "Evidence & Proof",
-    short: "Evidence",
-    icon: "shield",
-  },
+  { href: "/app", label: "Home", short: "Home", icon: "grid" },
   { href: "/app/jobs", label: "Jobs", short: "Jobs", icon: "briefcase" },
+  { href: "/app/resumes", label: "Resume", short: "Resume", icon: "file" },
   {
     href: "/app/applications",
     label: "Applications",
-    short: "Apps",
+    short: "Applications",
     icon: "send",
   },
-  { href: "/app/resumes", label: "Resumes", short: "Resumes", icon: "file" },
   {
     href: "/app/interviews",
-    label: "Interviews",
-    short: "Interviews",
+    label: "Interview",
+    short: "Interview",
     icon: "calendar",
   },
-  {
-    href: "/app/follow-ups",
-    label: "Follow-ups",
-    short: "Follow-ups",
-    icon: "bell",
-  },
-  {
-    href: "/app/studio",
-    label: "Application Writing",
-    short: "Writing",
-    icon: "pen",
-  },
-  {
-    href: "/app/claims",
-    label: "Check AI Claims",
-    short: "Claims",
-    icon: "check",
-  },
-  {
-    href: "/app/opportunities",
-    label: "Compare Jobs",
-    short: "Compare",
-    icon: "scale",
-  },
-  { href: "/app/analytics", label: "Analytics", short: "Stats", icon: "chart" },
-  {
-    href: "/app/learning",
-    label: "Suggested Facts",
-    short: "Suggestions",
-    icon: "brain",
-  },
-  {
-    href: "/app/sprint",
-    label: "14-Day Sprint",
-    short: "Sprint",
-    icon: "sprint",
-  },
-  {
-    href: "/app/notifications",
-    label: "Notifications",
-    short: "Alerts",
-    icon: "bell",
-  },
-  { href: "/app/settings", label: "Settings", short: "Settings", icon: "cog" },
+  { href: "/app/profile", label: "Profile", short: "Profile", icon: "user" },
 ] as const;
 
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {
@@ -236,7 +188,7 @@ export function DesktopNav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] no-underline transition-colors"
+                className="nav-link flex items-center gap-2.5 px-2.5 py-[9px] text-[13px] no-underline"
                 style={{
                   background: active
                     ? "var(--brand-accent-soft)"
@@ -245,7 +197,6 @@ export function DesktopNav() {
                   fontWeight: active ? 600 : 500,
                 }}
               >
-                <Icon name={item.icon} />
                 <span className="truncate">{item.label}</span>
               </Link>
             </li>
@@ -258,7 +209,7 @@ export function DesktopNav() {
 
 export function MobileNav() {
   const pathname = usePathname();
-  const items = NAV_ITEMS.slice(0, 5);
+  const items = NAV_ITEMS;
   return (
     <nav
       aria-label="Primary mobile"
@@ -274,12 +225,11 @@ export function MobileNav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className="flex flex-col items-center gap-0.5 px-1 py-2 text-[10px] no-underline"
+                className="flex flex-col items-center gap-0.5 px-1 py-3 text-[10px] font-semibold uppercase tracking-tight no-underline"
                 style={{
                   color: active ? "var(--brand-accent)" : "var(--text-muted)",
                 }}
               >
-                <Icon name={item.icon} size={17} />
                 <span className="w-full truncate text-center">
                   {item.short}
                 </span>
@@ -287,20 +237,6 @@ export function MobileNav() {
             </li>
           );
         })}
-        <li className="min-w-0 flex-1">
-          <Link
-            href="/app/settings"
-            className="flex flex-col items-center gap-0.5 px-1 py-2 text-[10px] no-underline"
-            style={{
-              color: pathname.startsWith("/app/settings")
-                ? "var(--brand-accent)"
-                : "var(--text-muted)",
-            }}
-          >
-            <Icon name="menu" size={17} />
-            <span>More</span>
-          </Link>
-        </li>
       </ul>
     </nav>
   );

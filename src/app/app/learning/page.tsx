@@ -54,9 +54,7 @@ export default async function LearningPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Learning
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Learning</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           What Acme Jobs has noticed about your search. Observations never
           become career facts without your confirmation, and no pattern is ever
@@ -94,7 +92,7 @@ export default async function LearningPage() {
       <Card>
         <CardHeader
           title="Evidence proposals"
-          description="Suggested additions to your Evidence Ledger, discovered from what you described in interviews."
+          description="Suggested additions to My Experience, discovered from what you described in interviews."
         />
         {proposals.length === 0 ? (
           <EmptyState

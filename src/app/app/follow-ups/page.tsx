@@ -66,9 +66,7 @@ export default async function FollowUpsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Follow-ups
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Follow-ups</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           Thank-you notes and follow-ups you actually sent. Acme Jobs tracks
           what is due; it never sends anything on your behalf.
@@ -78,7 +76,7 @@ export default async function FollowUpsPage() {
       {!canBuild ? (
         <Alert
           tone="info"
-          title="Follow-Up Builder is a Complete Edition feature"
+          title="Follow-Up Message is a Complete Edition feature"
         >
           You can still see what is due and mark messages as sent. Complete
           Edition adds the builder, scheduling and the full follow-up history.

@@ -95,9 +95,7 @@ export default async function ResumeDetailPage({
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-            {resume.label}
-          </h1>
+          <h1 className="page-title text-[var(--text)]">{resume.label}</h1>
           <p className="mt-0.5 text-sm text-[var(--text-muted)]">
             {resume.template.replace(/_/g, " ").toLowerCase()} · version{" "}
             {resume.currentVersion}

@@ -292,6 +292,48 @@ export const DefendClaimSchema = z.object({
   suggestedHonestWording: z.string().max(600).default(""),
 });
 
+/**
+ * Shape of an imported CV.
+ *
+ * Every field is nullable or defaulted because the product promise is that
+ * nothing is invented: an absent field must be absent here, not filled with a
+ * plausible guess that the UI would then present as fact.
+ */
+export const ProfileImportSchema = z.object({
+  firstName: z.string().max(120).nullable().default(null),
+  lastName: z.string().max(120).nullable().default(null),
+  email: z.string().max(320).nullable().default(null),
+  phone: z.string().max(60).nullable().default(null),
+  location: z.string().max(200).nullable().default(null),
+  links: z.array(z.string().max(400)).max(10).default([]),
+  headline: z.string().max(300).nullable().default(null),
+  summary: z.string().max(4000).nullable().default(null),
+  skills: z.array(z.string().max(80)).max(60).default([]),
+  roles: z
+    .array(
+      z.object({
+        title: z.string().max(200).nullable().default(null),
+        company: z.string().max(200).nullable().default(null),
+        start: z.string().max(40).nullable().default(null),
+        end: z.string().max(40).nullable().default(null),
+        bullets: z.array(z.string().max(1000)).max(15).default([]),
+      }),
+    )
+    .max(20)
+    .default([]),
+  education: z
+    .array(
+      z.object({
+        institution: z.string().max(200).nullable().default(null),
+        qualification: z.string().max(200).nullable().default(null),
+        endYear: z.string().max(20).nullable().default(null),
+      }),
+    )
+    .max(10)
+    .default([]),
+  certifications: z.array(z.string().max(200)).max(40).default([]),
+});
+
 export type JobAnalysisOutput = z.infer<typeof JobAnalysisSchema>;
 export type EvidenceExtractionOutput = z.infer<typeof EvidenceExtractionSchema>;
 export type ResumeBulletOutput = z.infer<typeof ResumeBulletSchema>;
@@ -332,4 +374,5 @@ export const OUTPUT_SCHEMAS = {
   ACHIEVEMENT_INTERVIEW: AchievementInterviewSchema,
   ASK_ACME: AskAcmeSchema,
   DEFEND_CLAIM: DefendClaimSchema,
+  PROFILE_IMPORT: ProfileImportSchema,
 } as const;

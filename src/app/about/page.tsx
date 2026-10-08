@@ -58,16 +58,15 @@ export default function AboutPage() {
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
             Acme Jobs runs on a local PostgreSQL database with a database-backed
-            job queue, local file storage and local structured logs. The default
-            AI mode is Manual Mode: the app produces a complete prompt, you run
-            it in whatever assistant you already pay for, and Acme Jobs
-            validates the result. Optional local AI (Ollama) and
-            bring-your-own-key providers are adapters, never requirements.
+            job queue, local file storage and local structured logs. Paid plans
+            use Acme Integrated AI by default for one-click workflows. You can
+            also bring your own provider key, while Manual Mode remains a free
+            fallback that produces a complete prompt and validates the result.
           </p>
           <p className="mt-2 flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
             <Icon name="shield" size={14} />
-            Your career data never leaves your own machine in the default
-            configuration.
+            Your career data is only sent to an AI provider when you run an AI
+            action; Manual Mode can keep that processing outside the app.
           </p>
         </article>
 

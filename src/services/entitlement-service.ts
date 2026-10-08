@@ -114,47 +114,66 @@ export async function grantCompleteEntitlement(input: {
   expiresAt?: Date | null;
   adminUserId?: string | null;
 }): Promise<{ id: string; deduplicated: boolean }> {
-  return inTransaction(async (tx) => {
-    if (input.externalEventId) {
-      const existing = await tx.entitlement.findUnique({
-        where: {
-          source_externalEventId: {
-            source: input.source,
-            externalEventId: input.externalEventId,
+  try {
+    return await inTransaction(async (tx) => {
+      if (input.externalEventId) {
+        const existing = await tx.entitlement.findUnique({
+          where: {
+            source_externalEventId: {
+              source: input.source,
+              externalEventId: input.externalEventId,
+            },
           },
+          select: { id: true },
+        });
+        if (existing) return { id: existing.id, deduplicated: true };
+      }
+      const created = await tx.entitlement.create({
+        data: {
+          userId: input.userId,
+          plan: "COMPLETE",
+          status: "ACTIVE",
+          source: input.source,
+          externalEventId: input.externalEventId ?? null,
+          externalCustomerId: input.externalCustomerId ?? null,
+          externalSubscriptionId: input.externalSubscriptionId ?? null,
+          expiresAt: input.expiresAt ?? null,
         },
         select: { id: true },
       });
-      if (existing) return { id: existing.id, deduplicated: true };
-    }
-    const created = await tx.entitlement.create({
-      data: {
-        userId: input.userId,
-        plan: "COMPLETE",
-        status: "ACTIVE",
-        source: input.source,
-        externalEventId: input.externalEventId ?? null,
-        externalCustomerId: input.externalCustomerId ?? null,
-        externalSubscriptionId: input.externalSubscriptionId ?? null,
-        expiresAt: input.expiresAt ?? null,
+      await tx.auditLog.create({
+        data: {
+          userId: input.userId,
+          action: "entitlement.granted",
+          entity: "Entitlement",
+          entityId: created.id,
+          outcome: "success",
+          metadata: {
+            source: input.source,
+            adminUserId: input.adminUserId ?? null,
+          },
+        },
+      });
+      return { id: created.id, deduplicated: false };
+    });
+  } catch (error) {
+    // Two concurrent workers can both pass the pre-check above. The loser of
+    // the unique constraint is the replay: its transaction is already aborted,
+    // so it looks up the winner's row after rollback.
+    const known = error as { code?: string };
+    if (known.code !== "P2002" || !input.externalEventId) throw error;
+    const winner = await prisma.entitlement.findUnique({
+      where: {
+        source_externalEventId: {
+          source: input.source,
+          externalEventId: input.externalEventId,
+        },
       },
       select: { id: true },
     });
-    await tx.auditLog.create({
-      data: {
-        userId: input.userId,
-        action: "entitlement.granted",
-        entity: "Entitlement",
-        entityId: created.id,
-        outcome: "success",
-        metadata: {
-          source: input.source,
-          adminUserId: input.adminUserId ?? null,
-        },
-      },
-    });
-    return { id: created.id, deduplicated: false };
-  });
+    if (winner) return { id: winner.id, deduplicated: true };
+    throw error;
+  }
 }
 
 export async function revokeCompleteEntitlement(

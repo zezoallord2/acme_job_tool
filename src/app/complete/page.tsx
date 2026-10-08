@@ -11,7 +11,7 @@ import { PageHero } from "@/components/marketing";
 export const metadata = {
   title: "Complete Edition",
   description:
-    "The full evidence-first job search system: evidence ledger, claim inspector, readiness gate, immutable sent versions, interview command centre and analytics.",
+    "The full evidence-first job search system: trusted experience, truth checks, application review, saved sent versions, interview prep and analytics.",
 };
 
 export const dynamic = "force-dynamic";
@@ -98,7 +98,7 @@ export default async function CompletePage() {
       <PageHero
         eyebrow="Paid product"
         title="AI Job Hunter — Complete Edition"
-        lede="Build, execute and repeat. Every workflow runs on a verified evidence ledger, every suggestion explains itself, and every sent application is preserved exactly as submitted."
+        lede="Build, apply and improve. Every workflow uses experience you have confirmed, every suggestion explains itself, and every sent application is preserved exactly as submitted."
       >
         {entitlement?.isComplete ? (
           <>

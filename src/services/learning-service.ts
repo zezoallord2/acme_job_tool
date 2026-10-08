@@ -14,7 +14,7 @@ import { Errors } from "@/lib/errors";
 /**
  * Learning engine.
  *
- * Hard boundary: nothing here ever writes to the Evidence Ledger without an
+ * Hard boundary: nothing here ever writes to My Experience without an
  * explicit user confirmation. Observations become `EvidenceProposal` rows that
  * the user must accept.
  */

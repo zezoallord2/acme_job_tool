@@ -51,11 +51,11 @@ export function ResumeQuickCheck({
 
       {canInspect ? (
         <Link href="/app/claims" className="btn-secondary">
-          Open Claim Inspector
+          Open Truth Check
         </Link>
       ) : (
         <p className="text-xs text-[var(--text-muted)]">
-          The Claim Inspector, which lets you fix these at source, is part of
+          The Truth Check, which lets you fix these at source, is part of
           Complete Edition.
         </p>
       )}

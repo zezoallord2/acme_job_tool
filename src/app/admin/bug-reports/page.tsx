@@ -48,9 +48,7 @@ export default async function BugReportsPage() {
       </nav>
 
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Bug knowledge base
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Bug knowledge base</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           Symptom, root cause, fix and regression test for every reported
           defect. Used to spot recurring problems.

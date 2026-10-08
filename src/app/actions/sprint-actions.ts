@@ -11,7 +11,7 @@ import type { ActionState } from "@/app/actions/state";
 const DAY_PLAN = [
   [
     "CAREER_PROFILE",
-    "Tighten your Career Master Profile",
+    "Tighten your My Profile",
     "Confirm your target, contact details and factual career story.",
   ],
   [
@@ -41,7 +41,7 @@ const DAY_PLAN = [
   ],
   [
     "APPLICATION_WORKFLOW",
-    "Run the readiness gate",
+    "Check if you are ready to apply",
     "Resolve unsupported claims before sending.",
   ],
   [
@@ -110,7 +110,7 @@ export async function startSprintAction(
       const sprint = await tx.sprint.create({
         data: {
           userId: user.id,
-          title: "14-Day Job Search Sprint",
+          title: "14-Day Plan",
           status: "ACTIVE",
           startDate,
           endDate,

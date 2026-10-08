@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Icon } from "@/components/nav";
+import { Logo } from "@/components/logo";
 
 export function MarketingNav({ current }: { current?: string }) {
   const links = [
@@ -17,16 +17,7 @@ export function MarketingNav({ current }: { current?: string }) {
     >
       <div className="mx-auto flex max-w-[1160px] items-center gap-4 px-4 py-3">
         <Link href="/" className="flex items-center gap-2 no-underline">
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-md text-sm font-bold text-white"
-            style={{ background: "var(--brand)" }}
-            aria-hidden
-          >
-            A
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-[var(--text)]">
-            Acme Jobs
-          </span>
+          <Logo size={32} />
         </Link>
         <nav
           aria-label="Public"
@@ -96,9 +87,7 @@ export function MarketingFooter() {
           <Link href="/pricing" className="underline">
             Pricing
           </Link>
-          <span className="inline-flex items-center gap-1">
-            <Icon name="shield" size={12} /> Self-hosted, zero mandatory cost
-          </span>
+          <span>Self-hosted · zero mandatory cost</span>
         </div>
       </div>
     </footer>
@@ -117,7 +106,7 @@ export function PageHero({
   children?: ReactNode;
 }) {
   return (
-    <section className="px-4 pb-8 pt-10">
+    <section className="swiss-page-hero px-4 pb-10 pt-14">
       <div className="mx-auto max-w-[880px]">
         {eyebrow ? (
           <p
@@ -127,9 +116,9 @@ export function PageHero({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="mt-2 text-[26px] font-semibold leading-[1.2] tracking-tight text-[var(--text)] sm:text-[34px]">
+        <EchoTitle className="mt-4 text-[38px] sm:text-[58px]">
           {title}
-        </h1>
+        </EchoTitle>
         <p className="mt-3 max-w-[720px] text-[15px] leading-relaxed text-[var(--text-muted)]">
           {lede}
         </p>
@@ -138,5 +127,24 @@ export function PageHero({
         ) : null}
       </div>
     </section>
+  );
+}
+
+export function EchoTitle({
+  children,
+  className = "",
+}: {
+  children: string;
+  className?: string;
+}) {
+  return (
+    <h1 className={`echo-title ${className}`}>
+      {[0, 1, 2, 3].map((layer) => (
+        <span key={layer} className="echo-title__layer" aria-hidden="true">
+          {children}
+        </span>
+      ))}
+      <span className="echo-title__front">{children}</span>
+    </h1>
   );
 }

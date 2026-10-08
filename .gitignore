@@ -48,5 +48,7 @@ yarn-error.log*
 
 # Unrelated sibling projects in this workspace are not part of Acme Jobs.
 /acme webite/
-/my website/# bundled runtime artifacts (esbuild worker/CLI)
+/my website/
+
+# bundled runtime artifacts (esbuild worker/CLI)
 dist/

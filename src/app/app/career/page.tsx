@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/primitives";
 import { CareerProfileForm } from "@/components/career-profile-form";
 import { formatDate } from "@/lib/utils";
+import { CvImportCard } from "@/components/cv-import-card";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Career Profile" };
+export const metadata = { title: "My Profile" };
 
 export default async function CareerPage() {
   const user = await requireUser();
@@ -51,12 +52,13 @@ export default async function CareerPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-            {isComplete ? "Career Master Profile" : "Career Snapshot"}
+          <h1 className="page-title text-[var(--text)]">
+            {isComplete ? "My Profile" : "Quick Profile"}
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             What is factually true about you. Every suggestion in Acme Jobs is
-            built from this and your Evidence Ledger — never from guesswork.
+            built from this and your confirmed experience — never from
+            guesswork.
           </p>
         </div>
         <div className="w-full max-w-[220px]">
@@ -69,11 +71,13 @@ export default async function CareerPage() {
 
       {!isComplete ? (
         <Alert tone="info" title="Starter snapshot">
-          The Starter plan keeps a Career Snapshot. Complete Edition unlocks the
-          full Career Master Profile, Target Role Blueprint, Achievement Mining
-          and the Career Narrative Engine for career changers.
+          The Starter plan keeps a Quick Profile. Complete Edition unlocks the
+          full My Profile, Job Goals, Find My Wins and the Career Story for
+          career changers.
         </Alert>
       ) : null}
+
+      <CvImportCard hasProfile={completeness > 0} isComplete={isComplete} />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <Stat label="Roles" value={employments.length} />
@@ -191,7 +195,7 @@ export default async function CareerPage() {
                   <Link href="/app/career/skills/new" className="underline">
                     Add skills
                   </Link>{" "}
-                  so the evidence matrix can match them.
+                  so the match breakdown can match them.
                 </>
               ) : (
                 "Complete Edition unlocks the full skills inventory."
@@ -247,6 +251,27 @@ export default async function CareerPage() {
           )}
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title="More profile tools"
+          description="Use these only when you need more detail."
+        />
+        <div className="flex flex-wrap gap-2">
+          <Link href="/app/evidence" className="btn-secondary">
+            My Experience
+          </Link>
+          <Link href="/app/evidence/discover" className="btn-secondary">
+            Find My Wins
+          </Link>
+          <Link href="/app/studio" className="btn-secondary">
+            Writing Style &amp; Career Story
+          </Link>
+          <Link href="/app/settings" className="btn-ghost">
+            Settings
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }

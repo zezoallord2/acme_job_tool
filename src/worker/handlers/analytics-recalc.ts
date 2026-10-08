@@ -92,7 +92,7 @@ export async function handleNotificationDispatch(
           userId,
           type: "INTERVIEW_TOMORROW",
           title: `Interview tomorrow: ${i.company}`,
-          body: `${i.role}. Open the Command Center to prepare.`,
+          body: `${i.role}. Open Interview Prep to prepare.`,
           href: `/app/interviews/${i.id}`,
           dueAt: i.scheduledAt,
           dedupeKey,

@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { submitAnalysisAction } from "@/app/actions/job-actions";
+import {
+  analyzeJobAction,
+  submitAnalysisAction,
+} from "@/app/actions/job-actions";
 import { IDLE_ANALYSIS, type AnalysisSubmitResult } from "@/app/actions/state";
 import {
   ManualModePanel,
@@ -47,6 +50,17 @@ export function JobAnalysisPanel({
     });
   };
 
+  const analyze = () => {
+    const fd = new FormData();
+    fd.set("jobId", jobId);
+    startTransition(async () => {
+      setSubmitted(true);
+      const result = await analyzeJobAction(IDLE_ANALYSIS, fd);
+      setState(result);
+      if (result.ok) router.refresh();
+    });
+  };
+
   if (submitted && state.ok) {
     return (
       <Alert
@@ -58,7 +72,7 @@ export function JobAnalysisPanel({
             className="btn-primary"
             onClick={() => router.push(`/app/jobs/${jobId}`)}
           >
-            View evidence matrix
+            View match breakdown
           </button>
         }
       >
@@ -77,23 +91,45 @@ export function JobAnalysisPanel({
         </Alert>
       ) : null}
 
-      <ManualModePanel
-        prompt={prompt}
-        busy={isPending}
-        onValidate={validate}
-        actionLabel="Saving the analysis and rebuilding the evidence matrix"
-      />
+      <div
+        className="rounded-xl border p-4"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <h3 className="font-semibold text-[var(--text)]">
+          Check this job with Acme
+        </h3>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          One click finds the important requirements and compares them with your
+          confirmed experience.
+        </p>
+        <button
+          type="button"
+          className="btn-primary mt-3"
+          disabled={isPending}
+          onClick={analyze}
+        >
+          {isPending ? "Analyzing…" : "Analyze Job"}
+        </button>
+      </div>
 
       <details className="card-muted p-3">
         <summary className="cursor-pointer text-sm font-medium text-[var(--text)]">
-          Already have a response? Paste and save
+          Manual Mode (advanced fallback)
         </summary>
+        <div className="mt-3">
+          <ManualModePanel
+            prompt={prompt}
+            busy={isPending}
+            onValidate={validate}
+            actionLabel="Saving the analysis and rebuilding the match breakdown"
+          />
+        </div>
         <textarea
           className="input mt-2 font-mono"
           style={{ minHeight: 200 }}
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
-          placeholder="Paste the JSON or fenced JSON here"
+          placeholder="Paste the JSON response here"
           aria-label="AI response for analysis"
         />
         <button

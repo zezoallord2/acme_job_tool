@@ -39,7 +39,7 @@ test("a paid user sees the full matrix table with per-requirement reasoning", as
   // Evidence ledger holds the seeded, verified records.
   await page.goto("/app/evidence");
   await expect(
-    page.getByRole("heading", { name: "Evidence Ledger" }),
+    page.getByRole("heading", { name: "My Experience" }),
   ).toBeVisible();
   await expect(
     page.getByText(/Rebuilt the month-end reporting pack/i).first(),
@@ -50,18 +50,16 @@ test("a paid user sees the full matrix table with per-requirement reasoning", as
   await expect(page.getByText(/Free view/i)).toHaveCount(0);
 
   await page.goto("/app/opportunities");
-  await expect(
-    page.getByRole("heading", { name: "Effort vs Opportunity" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Best Jobs" })).toBeVisible();
 
   await page.goto("/app/interviews");
   await expect(
-    page.getByRole("link", { name: /Practise a mock interview/i }),
+    page.getByRole("link", { name: /Practice Interview/i }),
   ).toBeVisible();
 
   await page.goto("/app/stories");
   await expect(
-    page.getByRole("heading", { name: "STAR Story Bank" }),
+    page.getByRole("heading", { name: "Interview Stories" }),
   ).toBeVisible();
   await expect(
     page.getByText(/Cut month-end reporting time/i).first(),
@@ -73,7 +71,7 @@ test("a paid user sees the full matrix table with per-requirement reasoning", as
 
   await page.goto("/app/sprint");
   await expect(
-    page.getByRole("heading", { name: /14-Day Job Search Sprint/i }),
+    page.getByRole("heading", { name: /14-Day Plan/i }),
   ).toBeVisible();
 
   await page.goto("/app/notifications");
@@ -93,10 +91,10 @@ test("the claim inspector and readiness gate are available to a paid user", asyn
 
   await page.goto("/app/claims");
   await expect(
-    page.getByRole("heading", { name: "Claim Inspector" }),
+    page.getByRole("heading", { name: "Truth Check" }),
   ).toBeVisible();
 
-  // Ask Acme answers from structured data and admits gaps.
+  // Acme Assistant answers from structured data and admits gaps.
   await page.goto("/app/ask");
   await page.getByLabel("Your question").fill("What should I work on today?");
   await page.getByRole("button", { name: "Ask" }).click();
@@ -130,10 +128,79 @@ test("settings state AI cost responsibility honestly", async ({ page }) => {
   await page.goto("/app/settings");
   await expect(page.getByText("Manual Mode").first()).toBeVisible();
   await expect(page.getByText(/Cost to Acme Jobs: \$0/i).first()).toBeVisible();
-  await expect(
-    page.getByText(/Not part of the zero-cost release/i),
-  ).toBeVisible();
+  await expect(page.getByText("Acme Integrated AI").first()).toBeVisible();
+  await expect(page.getByText(/Included by Acme Jobs/i).first()).toBeVisible();
   await expect(
     page.getByText(/Billed to your provider account/i).first(),
   ).toBeVisible();
+});
+
+test("CV upload shows an editable review before anything is saved", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("paid@acmejobs.local");
+  await page.getByLabel("Password").fill(PASSWORD);
+  await page.getByRole("button", { name: /Sign in/i }).click();
+  await page.waitForURL(/\/app/, { timeout: 45_000 });
+
+  let confirmed = false;
+  await page.route("**/api/profile/import-cv", async (route) => {
+    if (route.request().method() === "PUT") {
+      const body = route.request().postDataJSON() as {
+        profile?: { firstName?: string };
+      };
+      confirmed = body.profile?.firstName === "Alex";
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          message: "Your reviewed CV details are now in My Profile.",
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        uploadKey: "test-upload.txt",
+        originalName: "sample-cv.txt",
+        profile: {
+          firstName: "Alex",
+          lastName: "Example",
+          email: "alex@example.test",
+          phone: null,
+          location: "Cairo",
+          links: [],
+          headline: "Data Analyst",
+          summary: null,
+          skills: ["SQL", "Python"],
+          roles: [
+            {
+              title: "Data Analyst Intern",
+              company: "Example Company",
+              start: "June 2025",
+              end: "August 2025",
+              bullets: ["Built a dashboard"],
+            },
+          ],
+          education: [],
+          certifications: [],
+        },
+      }),
+    });
+  });
+
+  await page.goto("/app/profile");
+  await page
+    .locator('input[type="file"]')
+    .setInputFiles("tests/fixtures/sample-cv.txt");
+  await expect(page.getByText("Review before saving")).toBeVisible();
+  await expect(page.getByLabel("First name").first()).toHaveValue("Alex");
+  await page.getByRole("button", { name: "Confirm & save my profile" }).click();
+  await expect(page.getByText(/reviewed CV details/i)).toBeVisible();
+  expect(confirmed).toBe(true);
 });

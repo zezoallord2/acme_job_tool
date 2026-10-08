@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getOnboarding } from "@/app/actions/onboarding-actions";
 import { OnboardingWizard } from "@/components/onboarding-wizard";
-import { Card, Alert } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export default async function OnboardingPage() {
           className="text-xs font-semibold uppercase tracking-[0.12em]"
           style={{ color: "var(--brand-accent)" }}
         >
-          Career Snapshot
+          Let&apos;s get you job-ready
         </p>
         <h1 className="mt-2 text-[24px] font-semibold tracking-tight text-[var(--text)]">
           {profileName?.firstName
@@ -35,16 +35,8 @@ export default async function OnboardingPage() {
             : "Welcome to Acme Jobs."}
         </h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Your experience. AI-assisted. Never invented.
+          A few simple steps, then your first matching jobs.
         </p>
-      </div>
-
-      <div className="mb-4">
-        <Alert tone="info">
-          Nine short questions. You can skip anything and come back later —
-          nothing is invented for you, so the less you add now, the more the
-          system will honestly tell you it does not know.
-        </Alert>
       </div>
 
       <Card>

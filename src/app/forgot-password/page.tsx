@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
         <p className="text-xs font-semibold tracking-wide text-[var(--brand-accent)] uppercase">
           Acme Jobs
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">
+        <h1 className="mt-2 page-title text-[var(--text)]">
           Reset your password
         </h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">

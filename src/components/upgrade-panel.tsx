@@ -105,12 +105,12 @@ export function UpgradePanel({
         <ul className="mt-1.5 space-y-1 text-sm text-[var(--text-muted)]">
           {[
             "Unlimited applications, resume versions and STAR stories",
-            "Master Resume plus advanced tailoring and a bullet builder",
+            "My Resume plus advanced tailoring and a bullet builder",
             "Cover letters, LinkedIn rewrite, application answer builder",
-            "Achievement Mining: turn a job description into a story you forgot",
-            "Claim Inspector and Readiness Gate for interview defence",
-            "Interview Command Center, application tracker and analytics",
-            "Daily Priority Engine and Effort vs Opportunity",
+            "Find My Wins: turn a job description into a story you forgot",
+            "Truth Check and Ready to Apply? review",
+            "Interview Prep, application tracker and analytics",
+            "Today's Tasks and Best Jobs",
           ].map((line) => (
             <li key={line} className="flex gap-2">
               <span aria-hidden style={{ color: "var(--brand-accent)" }}>

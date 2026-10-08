@@ -229,7 +229,7 @@ const RESUME_TAILORING: StudioWorkflow = {
       label: "Application to tailor for",
       kind: "select",
       optionsFrom: "applications",
-      hint: "Uses that job's requirements, evidence matrix and the resume you sent.",
+      hint: "Uses that job's requirements, match breakdown and the resume you sent.",
     },
   ],
   async buildContext(userId, v) {
@@ -275,7 +275,7 @@ const RESUME_TAILORING: StudioWorkflow = {
         raw,
       );
 
-    // A draft cloned from the Master Resume, linked to the job and application.
+    // A draft cloned from the main resume, linked to the job and application.
     // The draft is created after the workflow runs, so a failed validation never
     // leaves an empty resume behind.
     const { createJobVersion, updateResumeContent } =
@@ -360,7 +360,7 @@ const RESUME_TAILORING: StudioWorkflow = {
 
     return {
       summary:
-        "Tailored draft saved. Nothing was sent, and your Master Resume is untouched.",
+        "Tailored draft saved. Nothing was sent, and your main resume is untouched.",
       savedPath: "/app/resumes",
       savedLabel: "Open your resumes",
       rows: [
@@ -433,7 +433,7 @@ const RESUME_BULLET: StudioWorkflow = {
     );
 
     const owned = await ownedEvidenceIds(userId, data.usedEvidenceIds);
-    // Create the Master Resume if this account has never opened the resumes page.
+    // Create the main resume if this account has never opened the resumes page.
     // Requiring it to already exist would make this tool fail for a brand-new
     // user, which reads as a broken feature rather than a missing prerequisite.
     const { ensureMasterResume } = await import("@/services/resume-service");

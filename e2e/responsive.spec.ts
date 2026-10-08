@@ -114,6 +114,9 @@ test("the desktop sidebar navigation is present on a wide viewport", async ({
 
   await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Evidence & Proof" }),
+    page.getByRole("link", { name: "Profile", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Jobs", exact: true }),
   ).toBeVisible();
 });

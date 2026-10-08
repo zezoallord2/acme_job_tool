@@ -15,7 +15,7 @@ import { EvidenceVerificationButtons } from "@/components/evidence-verification-
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Evidence Ledger" };
+export const metadata = { title: "My Experience" };
 
 export default async function EvidencePage() {
   const user = await requireUser();
@@ -29,9 +29,7 @@ export default async function EvidencePage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-            Evidence Ledger
-          </h1>
+          <h1 className="page-title text-[var(--text)]">My Experience</h1>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             What is factually true about your career. AI may only use verified
             or user-confirmed records as fact — everything else is surfaced as
@@ -75,8 +73,7 @@ export default async function EvidencePage() {
       {!isComplete ? (
         <Alert tone="info" title="Free ledger">
           You can record, confirm and reject evidence. Complete Edition adds
-          Achievement Mining, Target Role Blueprint and evidence-linked resume
-          tailoring.
+          Find My Wins, Job Goals and evidence-linked resume tailoring.
         </Alert>
       ) : null}
 

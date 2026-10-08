@@ -17,6 +17,9 @@ export const WORKFLOW_IDS = [
   "ACHIEVEMENT_INTERVIEW",
   "ASK_ACME",
   "DEFEND_CLAIM",
+  // Reads a user-supplied CV and returns a structured profile. Extraction only:
+  // the model may report what the document says and nothing more.
+  "PROFILE_IMPORT",
 ] as const;
 
 export type WorkflowId = (typeof WORKFLOW_IDS)[number];
@@ -109,6 +112,11 @@ export const PROMPT_VERSIONS: Record<
     active: "DEFEND_CLAIM_PROMPT_v2",
     candidates: [],
     retired: ["v1"],
+  },
+  PROFILE_IMPORT: {
+    active: "PROFILE_IMPORT_v1",
+    candidates: [],
+    retired: [],
   },
 };
 

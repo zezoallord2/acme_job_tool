@@ -89,8 +89,8 @@ export function buildPriorities(
           " interview —",
         ),
       detail: iv.prepComplete
-        ? "Brief is ready. Re-read the Command Center."
-        : "Open the Interview Command Center: requirements, sent resume, strongest evidence, questions to ask.",
+        ? "Brief is ready. Re-read Interview Prep."
+        : "Open Interview Prep: requirements, sent resume, strongest evidence, questions to ask.",
       minutes,
       href: `/app/interviews/${iv.id}`,
       rank: 0,
@@ -117,7 +117,7 @@ export function buildPriorities(
       action: "DO",
       title: `Follow up with ${f.company}${f.role ? ` — ${f.role}` : ""}`,
       detail:
-        "Short, specific, references your application. Use the Follow-Up Builder.",
+        "Short, specific, references your application. Use the Follow-Up Message.",
       minutes: 5,
       href: `/app/applications/${f.applicationId}`,
       rank: 0,
@@ -149,10 +149,10 @@ export function buildPriorities(
       title: `${label} for ${w.company}${w.role ? ` — ${w.role}` : ""}`,
       detail:
         w.kind === "RESUME_NOT_TAILORED"
-          ? "Tailor from your Master Resume using only evidence that supports each bullet."
+          ? "Tailor from your main resume using only evidence that supports each bullet."
           : w.kind === "REQUIREMENTS_NOT_REVIEWED"
             ? "Confirm which requirements are must-have before you invest time."
-            : "Run the Readiness Gate, then send.",
+            : "Run Ready to Apply?, then send.",
       minutes,
       href: `/app/applications/${w.applicationId}`,
       rank: 0,

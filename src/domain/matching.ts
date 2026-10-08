@@ -12,7 +12,7 @@ import {
 } from "./evidence";
 
 /**
- * Evidence Matrix + Apply/Review/Skip. No hiring-probability estimate is ever
+ * Match Breakdown + Apply/Review/Skip. No hiring-probability estimate is ever
  * produced; the output is evidence coverage plus an explanation.
  */
 
@@ -373,7 +373,7 @@ export interface OpportunityRow {
 }
 
 /**
- * Effort vs Opportunity. Answers "where should I spend my next hour?" with a
+ * Best Jobs. Answers "where should I spend my next hour?" with a
  * transparent score — no black box, no outcome prediction.
  */
 export interface OpportunityScored extends OpportunityRow {

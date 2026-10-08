@@ -4,13 +4,13 @@ import { PageHero } from "@/components/marketing";
 export const metadata = {
   title: "Free — AI Job Search Starter Guide",
   description:
-    "Free Edition: Career Snapshot, Resume Quick Check, Job Analyzer, basic tailoring, one STAR story, five-question mock interview.",
+    "Free Edition: Quick Profile, Resume Quick Check, Job Analyzer, basic tailoring, one STAR story, five-question mock interview.",
 };
 
 const LESSONS = [
   {
     n: "1",
-    t: "Build a Career Snapshot",
+    t: "Build a Quick Profile",
     b: "Your name, level, target role and a short verified evidence base. Enough to start, honest about what is missing.",
   },
   {
@@ -125,9 +125,8 @@ export default function FreePage() {
         <p className="mt-1.5 text-sm text-[var(--text-muted)]">
           Free gives you one career snapshot, one STAR story, five interview
           questions and a limited number of saved applications. It does not give
-          you the full Evidence Ledger, the Claim Inspector, unlimited resume
-          versions, the Interview Command Center, analytics or the Daily
-          Priority Engine. Those are in{" "}
+          you the full My Experience, the Truth Check, unlimited resume
+          versions, Interview Prep, analytics or Today's Tasks. Those are in{" "}
           <Link href="/complete" className="underline">
             Complete Edition
           </Link>

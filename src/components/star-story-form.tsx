@@ -130,7 +130,7 @@ export function StarStoryForm({ disabled }: { disabled: boolean }) {
         <Field
           label="Evidence ids"
           htmlFor="s-evidence"
-          hint="Comma separated, from your Evidence Ledger."
+          hint="Comma separated, from My Experience."
         >
           <input id="s-evidence" name="evidenceIds" className="input" />
         </Field>

@@ -188,7 +188,7 @@ export function CareerProfileForm({
       <Field
         label="Headline"
         htmlFor="c-headline"
-        hint="One line, used by the LinkedIn Optimizer."
+        hint="One line, used by your LinkedIn profile."
       >
         <input
           id="c-headline"

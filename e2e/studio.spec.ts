@@ -272,16 +272,14 @@ test("a free user sees the tools locked rather than broken", async ({
   ).toBeVisible();
 });
 
-test("the studio is reachable from the primary navigation", async ({
-  page,
-}) => {
+test("the studio is reachable from the Profile section", async ({ page }) => {
   test.setTimeout(180_000);
   await signInPaid(page);
 
-  const nav = page.getByRole("navigation", { name: "Primary" });
-  await expect(nav.getByRole("link", { name: "Writing Studio" })).toBeVisible();
-
-  await nav.getByRole("link", { name: "Writing Studio" }).click();
+  await page.getByRole("link", { name: "Profile", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Writing Style & Career Story" })
+    .click();
   await page.waitForURL(/\/app\/studio/, { timeout: 30_000 });
 });
 

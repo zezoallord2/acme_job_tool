@@ -25,7 +25,7 @@ import type {
  * each one a real entry point and a persistence rule.
  *
  * The persistence rule is the same everywhere: AI output becomes a PROPOSAL,
- * never a fact. Nothing reaches the Evidence Ledger until the user accepts it on
+ * never a fact. Nothing reaches My Experience until the user accepts it on
  * the Learning page.
  *
  * Manual Mode is the only path these run through. `raw` is the pasted response,

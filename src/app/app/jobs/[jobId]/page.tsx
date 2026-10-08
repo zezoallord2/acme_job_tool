@@ -71,7 +71,7 @@ export default async function JobDetailPage({
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+          <h1 className="page-title text-[var(--text)]">
             {job.title ?? "Role not set"}
           </h1>
           <p className="mt-0.5 text-sm text-[var(--text-muted)]">
@@ -91,7 +91,11 @@ export default async function JobDetailPage({
           ) : null}
           {isComplete ? (
             <Link
-              href={`/app/applications/${application?.id ?? ""}/tailor?jobId=${job.id}`}
+              href={
+                application
+                  ? `/app/applications/${application.id}/tailor?jobId=${job.id}`
+                  : "/app/applications"
+              }
               className="btn-primary"
             >
               Tailor resume
@@ -108,7 +112,7 @@ export default async function JobDetailPage({
         <Card>
           <CardHeader
             title="Analyze this description"
-            description="Runs in Manual Mode by default: no API key, no cost. Paste the prompt into any assistant, then paste the result back."
+            description="Analyze in one click with your configured provider. Manual Mode remains available as an advanced fallback."
           />
           <JobAnalysisPanel jobId={job.id} prompt={prompt} />
         </Card>
@@ -143,7 +147,7 @@ export default async function JobDetailPage({
           {matrix ? (
             <Card>
               <CardHeader
-                title="Evidence matrix"
+                title="Match breakdown"
                 description="Each requirement compared against your evidence. Nothing here is a probability."
                 action={<RebuildMatrixButton jobId={job.id} />}
               />
@@ -187,7 +191,7 @@ export default async function JobDetailPage({
                 <Alert tone="info" title="Free view">
                   You can see coverage counts. Complete Edition shows the full
                   requirement-by-requirement table with the recommended action
-                  for each row and the Apply / Review / Skip reasoning.
+                  for each row and the Should I Apply? reasoning.
                 </Alert>
               )}
 
@@ -195,12 +199,12 @@ export default async function JobDetailPage({
             </Card>
           ) : (
             <EmptyState
-              title="No evidence matrix yet"
+              title="No match breakdown yet"
               description="Build it to see which requirements you can already prove and which are gaps."
               action={
                 <RebuildMatrixButton
                   jobId={job.id}
-                  label="Build evidence matrix"
+                  label="Build match breakdown"
                 />
               }
             />
@@ -292,7 +296,7 @@ export default async function JobDetailPage({
       <Card>
         <CardHeader
           title="Original job description"
-          description="Stored verbatim. It becomes part of the immutable Application Capsule when you apply."
+          description="Stored verbatim. It becomes part of the immutable Application Details when you apply."
         />
         <pre
           className="code-block"

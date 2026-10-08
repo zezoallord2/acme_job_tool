@@ -56,9 +56,7 @@ export default async function InterviewReviewPage({
       </nav>
 
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Post-interview review
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Post-interview review</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           {interview.company} · {interview.role}. This is preserved so future
           applications are better than the last one.

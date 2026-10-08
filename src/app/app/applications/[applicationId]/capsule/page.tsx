@@ -11,7 +11,7 @@ import {
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Application Capsule" };
+export const metadata = { title: "Application Details" };
 
 /**
  * The permanent record: "what exactly did I send this company?"
@@ -31,9 +31,7 @@ export default async function CapsulePage({
   if (!snapshot) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Application Capsule
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Application Details</h1>
         <EmptyState
           title="Nothing sent yet"
           description="A capsule is created the moment you mark an application as applied. It freezes the job description, resume, cover letter, answers and evidence state exactly as they were."
@@ -77,9 +75,7 @@ export default async function CapsulePage({
       </nav>
 
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Application Capsule
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Application Details</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           {app.job?.company ?? "Company not set"} —{" "}
           {app.job?.title ?? "Role not set"}
@@ -96,9 +92,9 @@ export default async function CapsulePage({
       </header>
 
       <Alert tone="success" title="This record never changes">
-        After sealing, editing your Master Resume or any evidence record does
-        not alter what you sent. The hash lets you verify that. If a future
-        change ever attempted to modify this row, the write would be refused.
+        After sealing, editing your main resume or any evidence record does not
+        alter what you sent. The hash lets you verify that. If a future change
+        ever attempted to modify this row, the write would be refused.
       </Alert>
 
       <Card>
@@ -152,7 +148,7 @@ export default async function CapsulePage({
 
       {matrix ? (
         <Card>
-          <CardHeader title="Evidence matrix at the time of sending" />
+          <CardHeader title="Match breakdown at the time of sending" />
           <div className="grid gap-2 text-sm sm:grid-cols-2">
             <Field
               label="Classification"

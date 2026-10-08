@@ -16,7 +16,7 @@ export default async function NewJobPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+        <h1 className="page-title text-[var(--text)]">
           Analyze a job description
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
@@ -26,12 +26,10 @@ export default async function NewJobPage() {
         </p>
       </header>
 
-      <Alert tone="info" title="Zero-cost mode">
-        Analysis works in Manual Mode with no API key: the app builds a complete
-        prompt, you paste it into whichever assistant you already use, then
-        paste the result back. Acme Jobs validates it and continues. A local AI
-        provider or your own API key can be configured in Settings if you prefer
-        direct execution.
+      <Alert tone="info" title="One-click analysis">
+        Acme Integrated AI analyzes the job automatically when it is available
+        on your plan. You can configure your own provider in Settings, and
+        Manual Mode remains available as a no-cost fallback.
       </Alert>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -95,7 +93,7 @@ export default async function NewJobPage() {
           ) : (
             <EmptyState
               title="Nothing here yet"
-              description="Your first job description becomes the basis of an evidence matrix, a recommendation and a tailored resume."
+              description="Your first job description becomes the basis of an match breakdown, a recommendation and a tailored resume."
             />
           )}
         </div>

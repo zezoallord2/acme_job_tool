@@ -160,11 +160,7 @@ export async function buildAchievementPrompt(formData: FormData) {
     await requireSameOrigin();
     const user = await requireUser();
     await enforceRateLimit("aiAssist", { userId: user.id });
-    await requireCapability(
-      user.id,
-      "ACHIEVEMENT_MINING",
-      "Achievement Mining",
-    );
+    await requireCapability(user.id, "ACHIEVEMENT_MINING", "Find My Wins");
 
     let known: Record<string, unknown> = {};
     let questionCount = 0;
@@ -195,11 +191,7 @@ export async function submitAchievementTurnAction(
     await requireSameOrigin();
     const user = await requireUser();
     await enforceRateLimit("aiAssist", { userId: user.id });
-    await requireCapability(
-      user.id,
-      "ACHIEVEMENT_MINING",
-      "Achievement Mining",
-    );
+    await requireCapability(user.id, "ACHIEVEMENT_MINING", "Find My Wins");
 
     let known: Record<string, unknown> = {};
     try {
@@ -232,11 +224,7 @@ export async function finishMiningAction(
     await requireSameOrigin();
     const user = await requireUser();
     await enforceRateLimit("write", { userId: user.id });
-    await requireCapability(
-      user.id,
-      "ACHIEVEMENT_MINING",
-      "Achievement Mining",
-    );
+    await requireCapability(user.id, "ACHIEVEMENT_MINING", "Find My Wins");
 
     let facts: Array<{
       statement: string;

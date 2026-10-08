@@ -140,6 +140,97 @@ export async function saveOnboardingStepAction(
   }
 }
 
+/** The plain-language onboarding path: one save after four short screens. */
+export async function finishSimpleOnboardingAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    await requireSameOrigin();
+    const user = await requireUser();
+    await enforceRateLimit("write", { userId: user.id });
+    const targetRole = String(formData.get("targetRole") ?? "")
+      .trim()
+      .slice(0, 120);
+    const firstName = String(formData.get("firstName") ?? "")
+      .trim()
+      .slice(0, 80);
+    const location = String(formData.get("locationPreference") ?? "")
+      .trim()
+      .slice(0, 120);
+    const workArrangement = requireEnum(
+      formData.get("workArrangement") || "NO_PREFERENCE",
+      ["REMOTE", "HYBRID", "ON_SITE", "NO_PREFERENCE"],
+    );
+    if (!targetRole) throw Errors.validation("Tell us which job you want.");
+
+    await prisma.userProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        firstName: firstName || null,
+        locationCity: location || null,
+        workArrangement: workArrangement as
+          "REMOTE" | "HYBRID" | "ON_SITE" | "NO_PREFERENCE",
+      },
+      update: {
+        ...(firstName ? { firstName } : {}),
+        ...(location ? { locationCity: location } : {}),
+        workArrangement: workArrangement as
+          "REMOTE" | "HYBRID" | "ON_SITE" | "NO_PREFERENCE",
+      },
+    });
+    await prisma.careerMasterProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        targetRolePrimary: targetRole,
+        primaryGoal: "BETTER_TARGETING",
+      },
+      update: { targetRolePrimary: targetRole },
+    });
+    await prisma.onboardingProgress.upsert({
+      where: {
+        id:
+          (
+            await prisma.onboardingProgress.findFirst({
+              where: { userId: user.id },
+              select: { id: true },
+            })
+          )?.id ?? "new",
+      },
+      create: {
+        userId: user.id,
+        firstName: firstName || null,
+        targetRole,
+        locationPreference: location || null,
+        workArrangement: workArrangement as
+          "REMOTE" | "HYBRID" | "ON_SITE" | "NO_PREFERENCE",
+        primaryGoal: "BETTER_TARGETING",
+        step: "COMPLETE",
+        completedAt: new Date(),
+        snapshotCreatedAt: new Date(),
+      },
+      update: {
+        firstName: firstName || undefined,
+        targetRole,
+        locationPreference: location || null,
+        workArrangement: workArrangement as
+          "REMOTE" | "HYBRID" | "ON_SITE" | "NO_PREFERENCE",
+        primaryGoal: "BETTER_TARGETING",
+        step: "COMPLETE",
+        completedAt: new Date(),
+        snapshotCreatedAt: new Date(),
+      },
+    });
+    const { ensureMasterResume } = await import("@/services/resume-service");
+    await ensureMasterResume(user.id);
+    return { ok: true, message: "You're ready. Finding jobs for you now." };
+  } catch (e) {
+    return { ok: false, message: userFacingMessage(asAppError(e)) };
+  }
+}
+
 type OnboardingStepName =
   | "FIRST_NAME"
   | "EXPERIENCE_LEVEL"
@@ -173,7 +264,7 @@ function requireEnum(
   return v;
 }
 
-/** Career Snapshot: minimum viable career record plus honest completeness. */
+/** Quick Profile: minimum viable career record plus honest completeness. */
 async function buildCareerSnapshot(
   userId: string,
   onboarding: {
@@ -257,7 +348,7 @@ async function buildCareerSnapshot(
           statement: snapshotStatement,
           claimType: "RESPONSIBILITY",
           sourceType: "USER_STATEMENT",
-          sourceDescription: "Career Snapshot created during onboarding",
+          sourceDescription: "Quick Profile created during onboarding",
           verificationStatus: "USER_CONFIRMED",
           confidenceCategory: "MEDIUM",
           authority: "USER_CONFIRMED",

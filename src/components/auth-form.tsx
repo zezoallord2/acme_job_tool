@@ -24,7 +24,7 @@ export function AuthForm({ mode }: { mode: "signup" | "login" }) {
         <Field
           label="Full name"
           htmlFor="name"
-          hint="Used to personalise your Career Snapshot."
+          hint="Used to personalise your Quick Profile."
         >
           <input
             id="name"

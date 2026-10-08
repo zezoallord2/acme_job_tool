@@ -15,7 +15,7 @@ import { newIdempotencyKey } from "@/lib/crypto";
 import type { ClaimType, ClaimVerificationState } from "@prisma/client";
 
 /**
- * Claim Inspector + Cross-Document Consistency + Readiness Gate.
+ * Truth Check + Cross-Document Consistency + Readiness Gate.
  *
  * Every generated claim keeps its evidence links, so "Why is Acme Jobs saying
  * this?" is always answerable.

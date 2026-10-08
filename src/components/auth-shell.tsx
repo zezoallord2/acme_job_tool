@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/nav";
+import { Logo } from "@/components/logo";
 
 export function AuthShell({
   title,
@@ -26,10 +27,10 @@ export function AuthShell({
             style={{ background: "var(--brand)" }}
             aria-hidden
           >
-            A
+            <Logo size={30} withWordmark={false} />
           </span>
           <span className="text-base font-semibold tracking-tight text-[var(--text)]">
-            Acme Jobs
+            Acme <span style={{ color: "var(--brand-accent)" }}>Jobs</span>
           </span>
         </Link>
 

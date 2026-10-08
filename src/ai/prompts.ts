@@ -644,6 +644,23 @@ RELATED EVIDENCE
 ${evidenceBlock(evidence as never)}
 """`,
   },
+  PROFILE_IMPORT: {
+    workflowId: "PROFILE_IMPORT",
+    // Deliberately identical to the prompt the CV import service sends, so the
+    // prompt registry and the feature cannot drift apart.
+    systemPrompt: `You extract structured data from a person's CV.
+
+Absolute rules:
+1. Copy only what is written in the document. Never infer, guess, or add
+   anything that is not present in the text.
+2. Never invent metrics, employers, dates, or qualifications.
+3. If a field is not in the document, return null for it, or an empty array.
+4. Keep bullet text close to the original wording. Do not improve it.
+5. Return only JSON, no commentary.`,
+    jsonHint: '{"skills":[],"roles":[],"education":[],"certifications":[]}',
+    buildUserPrompt: ({ cvText }: Record<string, unknown>) =>
+      `Extract the profile from this CV.\n\n<cv>\n${String(cvText ?? "")}\n</cv>`,
+  },
 };
 
 export function buildPrompt(

@@ -1,18 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Acme Jobs">
-  <rect width="64" height="64" rx="14" fill="#0f3d2e" />
-  <path
-    d="M20 45 L32 19 L44 45"
-    fill="none"
-    stroke="#f7f7f5"
-    stroke-width="5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <path
-    d="M25.5 37 H38.5"
-    fill="none"
-    stroke="#8fd6b0"
-    stroke-width="4"
-    stroke-linecap="round"
-  />
+  <!--
+    Acme Jobs mark. Colours match public/brand/logo.png:
+    navy #001E54, cyan #00E2FC, blue #01AAFE, ice #19F8F8.
+
+    Drawn as vector rather than shipped as a 1.2 MB raster because a favicon has
+    to stay crisp at 16px and costs nothing to download. The previous icon.svg
+    was a zero-byte file, which is why the browser tab showed no logo at all.
+  -->
+  <defs>
+    <linearGradient id="mark" x1="6" y1="58" x2="52" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#01AAFE"/>
+      <stop offset="0.55" stop-color="#00D8F6"/>
+      <stop offset="1" stop-color="#19F8F8"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#012A72"/>
+      <stop offset="1" stop-color="#001E54"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="url(#navy)"/>
+
+  <!-- The "A": two strokes meeting at the apex, with the crossbar. -->
+  <path d="M32 12 L47 50 H40.5 L37.6 42.5 H26.4 L23.5 50 H17 Z" fill="url(#mark)"/>
+  <path d="M29.4 36.5 H34.6 L32 29.6 Z" fill="#001E54"/>
+
+  <!-- Orbit: the ring from the mark, kept faint so the letterform leads. -->
+  <circle cx="32" cy="32" r="24" fill="none" stroke="#19F8F8" stroke-opacity="0.28" stroke-width="1.4"/>
+  <circle cx="53" cy="21" r="2.6" fill="#19F8F8"/>
 </svg>

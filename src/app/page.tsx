@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { MarketingNav, MarketingFooter } from "@/components/marketing";
-import { Icon } from "@/components/nav";
-import { TubesHero } from "@/components/tubes-hero";
+import {
+  EchoTitle,
+  MarketingNav,
+  MarketingFooter,
+} from "@/components/marketing";
 
 export const metadata = {
   title: "Stop Sending Generic Applications",
@@ -31,19 +33,19 @@ const DIFFERENTIATORS = [
 const WORKFLOW = [
   {
     step: "Career",
-    body: "Organise your real experience into a verified evidence ledger.",
+    body: "Organise your real experience into a trustworthy profile.",
   },
   {
     step: "Job",
     body: "Paste a description. See the real requirements, not a guessed score.",
   },
   {
-    step: "Evidence matrix",
+    step: "Match breakdown",
     body: "Compare requirements against what you can actually prove.",
   },
   {
     step: "Application",
-    body: "Tailored resume, consistent answers, readiness gate before you send.",
+    body: "Tailored resume, consistent answers, and a final check before you send.",
   },
   {
     step: "Sent",
@@ -64,56 +66,38 @@ export default function HomePage() {
       <MarketingNav current="/" />
 
       <main id="main">
-        <TubesHero>
-          <div className="px-4 pb-16 pt-20 sm:pb-20 sm:pt-24">
-            <div className="mx-auto max-w-[1120px]">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#75e3e6]">
-                Evidence-first career intelligence
-              </p>
-              <h1 className="max-w-[900px] text-[36px] font-semibold leading-[1.04] tracking-[-0.035em] text-white sm:text-[60px] lg:text-[72px]">
-                Stop Sending Generic Applications.
-                <br />
-                <span className="text-[#75e3e6]">
-                  Build Better Ones With AI.
-                </span>
-              </h1>
-              <p className="mt-6 max-w-[720px] text-[15px] leading-relaxed text-slate-200 sm:text-[18px]">
-                Acme Jobs gives you practical AI-powered systems to understand
-                job descriptions, improve your resume, prepare for interviews,
-                and turn your real experience into stronger applications.
-              </p>
-              <p className="mt-4 text-sm font-semibold text-[#75e3e6]">
-                Your experience. AI-assisted. Never invented.
-              </p>
+        <section className="swiss-home-hero overflow-hidden border-b border-black px-4 pb-16 pt-20 sm:pb-20 sm:pt-24">
+          <div className="mx-auto max-w-[1120px]">
+            <p className="mb-8 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              Evidence-first career intelligence
+            </p>
+            <EchoTitle className="max-w-[980px] text-[48px] sm:text-[76px] lg:text-[96px]">
+              Stop sending generic applications.
+            </EchoTitle>
+            <p className="mt-8 max-w-[720px] text-[15px] leading-relaxed text-[var(--text-muted)] sm:text-[18px]">
+              Acme Jobs gives you practical AI-powered systems to understand job
+              descriptions, improve your resume, prepare for interviews, and
+              turn your real experience into stronger applications.
+            </p>
+            <p className="mt-4 text-sm font-semibold text-[var(--text)]">
+              Your experience. AI-assisted. Never invented.
+            </p>
 
-              <div className="mt-7 flex flex-wrap gap-2.5">
-                <Link
-                  href="/signup"
-                  className="btn-primary !bg-[#24c3c8] !text-[#07131f]"
-                >
-                  Start free — no card
-                </Link>
-                <Link
-                  href="/free"
-                  className="btn-secondary !border-white/25 !bg-white/10 !text-white backdrop-blur-md"
-                >
-                  Read the Free Starter Guide
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="btn-secondary !border-white/25 !bg-white/10 !text-white backdrop-blur-md"
-                >
-                  See Complete Edition
-                </Link>
-              </div>
-
-              <p className="mt-5 inline-flex items-center gap-1.5 text-xs text-slate-300">
-                <Icon name="shield" size={13} />
-                {COST_NOTE}
-              </p>
+            <div className="mt-7 flex flex-wrap gap-2.5">
+              <Link href="/signup" className="btn-primary">
+                Start free — no card
+              </Link>
+              <Link href="/free" className="btn-secondary">
+                Read the Free Starter Guide
+              </Link>
+              <Link href="/pricing" className="btn-secondary">
+                See Complete Edition
+              </Link>
             </div>
+
+            <p className="mt-5 text-xs text-[var(--text-muted)]">{COST_NOTE}</p>
           </div>
-        </TubesHero>
+        </section>
 
         <section
           className="border-y px-4 py-10"
@@ -147,7 +131,7 @@ export default function HomePage() {
                 <li key={w.step} className="card p-4">
                   <div className="flex items-center gap-2">
                     <span
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold text-white"
+                      className="flex h-6 w-6 items-center justify-center border border-[var(--border-strong)] text-xs font-semibold text-[var(--background)]"
                       style={{ background: "var(--brand-accent)" }}
                       aria-hidden
                     >
@@ -173,7 +157,7 @@ export default function HomePage() {
                 AI Job Search Starter Guide — Free Edition
               </h2>
               <p className="mt-2 text-sm text-[var(--text-muted)]">
-                Career Snapshot, Resume Quick Check, Job Analyzer, basic
+                Quick Profile, Resume Quick Check, Job Analyzer, basic
                 tailoring, one STAR story and a five-question mock interview.
                 Enough to improve one real application.
               </p>
@@ -203,8 +187,8 @@ export default function HomePage() {
               <p className="mt-2 text-sm text-[var(--text-muted)]">
                 The full system: achievement mining, deep job analysis,
                 effort-vs-opportunity ranking, master resume and versions, claim
-                inspector, readiness gate, interview command centre, immutable
-                sent versions, analytics and a daily priority engine.
+                truth checks, application review, interview prep, immutable sent
+                versions, analytics and a daily priority engine.
               </p>
               <p
                 className="mt-3 text-xs font-semibold"

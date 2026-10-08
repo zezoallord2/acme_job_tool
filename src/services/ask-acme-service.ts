@@ -9,7 +9,7 @@ import { getEntitlementState } from "./entitlement-service";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
 /**
- * Ask Acme answers from structured records only. When the data needed to answer
+ * Acme Assistant answers from structured records only. When the data needed to answer
  * is missing, the answer says so instead of inventing history.
  */
 
@@ -136,9 +136,7 @@ export async function askAcme(
           "Every claim you have generated is supported by verified or user-confirmed evidence.",
         citations: [],
         dataGaps: [],
-        suggestedActions: [
-          { label: "Open Claim Inspector", href: "/app/claims" },
-        ],
+        suggestedActions: [{ label: "Open Truth Check", href: "/app/claims" }],
         answeredDeterministically: true,
       };
     }
@@ -197,9 +195,9 @@ export async function askAcme(
     if (!snapshot) {
       return {
         answer:
-          "I could not find an application capsule for that. A sent snapshot exists only after you mark an application as applied.",
+          "I could not find application details for that. A sent snapshot exists only after you mark an application as applied.",
         citations: [],
-        dataGaps: ["No matching application capsule."],
+        dataGaps: ["No matching application details."],
         suggestedActions: [
           { label: "Open applications", href: "/app/applications" },
         ],
@@ -208,12 +206,12 @@ export async function askAcme(
     }
     return {
       answer: [
-        `Application capsule for ${snapshot.application.job?.company ?? "company"} — ${snapshot.application.job?.title ?? "role"}`,
+        `Application details for ${snapshot.application.job?.company ?? "company"} — ${snapshot.application.job?.title ?? "role"}`,
         `Sealed on ${snapshot.sealedAt.toLocaleDateString()} at status ${snapshot.applicationStatus}.`,
-        "The snapshot contains the exact job description, resume, cover letter, answers and evidence state you sent. It never changes after sealing.",
+        "The sealed capsule contains the exact job description, resume, cover letter, answers and evidence state you sent. It never changes after sealing.",
       ].join("\n"),
       citations: [
-        { kind: "snapshot", id: snapshot.id, label: "Application capsule" },
+        { kind: "snapshot", id: snapshot.id, label: "Application details" },
       ],
       dataGaps: [],
       suggestedActions: [
@@ -278,9 +276,7 @@ export async function askAcme(
         label: l.evidence.statement,
       })),
       dataGaps: [],
-      suggestedActions: [
-        { label: "Open Claim Inspector", href: "/app/claims" },
-      ],
+      suggestedActions: [{ label: "Open Truth Check", href: "/app/claims" }],
       answeredDeterministically: true,
     };
   }
@@ -388,7 +384,7 @@ export async function askAcme(
     dataGaps: [],
     suggestedActions: [
       { label: "Today's priorities", href: "/app" },
-      { label: "Claim Inspector", href: "/app/claims" },
+      { label: "Truth Check", href: "/app/claims" },
     ],
     answeredDeterministically: false,
   };

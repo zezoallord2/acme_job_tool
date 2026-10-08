@@ -34,9 +34,7 @@ export default async function InterviewsPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-            Interviews
-          </h1>
+          <h1 className="page-title text-[var(--text)]">Interview</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
             Prepare from your strongest evidence, review afterwards, and let
             what you remember become new evidence.
@@ -47,7 +45,7 @@ export default async function InterviewsPage() {
             Interview Prep
           </Link>
           <Link href="/app/interviews/practice" className="btn-secondary">
-            Practise a mock interview
+            Practice Interview
           </Link>
         </div>
       </header>
@@ -55,8 +53,8 @@ export default async function InterviewsPage() {
       {!isComplete ? (
         <Alert tone="info" title="Free mock interviews">
           The Starter plan includes a five-question mock interview. Complete
-          Edition adds the Interview Command Center, adaptive interviews,
-          post-interview review and the Follow-Up Builder.
+          Edition adds Interview Prep, adaptive interviews, post-interview
+          review and the Follow-Up Message.
         </Alert>
       ) : null}
 
@@ -78,7 +76,7 @@ export default async function InterviewsPage() {
         <Card>
           <CardHeader
             title="Add an interview"
-            description="Link it to an application so the Command Center can use the sent snapshot."
+            description="Link it to an application so Interview Prep can use the version you sent."
           />
           <InterviewForm
             applications={await prisma.application.findMany({
@@ -96,7 +94,7 @@ export default async function InterviewsPage() {
       {interviews.length === 0 ? (
         <EmptyState
           title="No interviews yet"
-          description="Add one when you get a call. The Command Center shows the requirements, your submitted resume, your strongest evidence and questions to ask."
+          description="Add one when you get a call. Interview Prep shows the requirements, the resume you sent, your strongest examples and questions to ask."
         />
       ) : (
         <Card>
@@ -121,14 +119,14 @@ export default async function InterviewsPage() {
                     href={`/app/interviews/${i.id}`}
                     className="btn-secondary"
                   >
-                    {isComplete ? "Command Center" : "Open"}
+                    {isComplete ? "Interview Prep" : "Open"}
                   </Link>
                   {isComplete ? (
                     <Link
                       href={`/app/interviews/${i.id}/review`}
                       className="btn-ghost"
                     >
-                      Post-interview review
+                      Interview Review
                     </Link>
                   ) : null}
                 </div>
@@ -137,6 +135,21 @@ export default async function InterviewsPage() {
           </ul>
         </Card>
       )}
+
+      <Card>
+        <CardHeader
+          title="More interview tools"
+          description="Build reusable stories or draft a follow-up when you need them."
+        />
+        <div className="flex flex-wrap gap-2">
+          <Link href="/app/stories" className="btn-secondary">
+            Interview Stories
+          </Link>
+          <Link href="/app/follow-ups" className="btn-secondary">
+            Follow-Up Messages
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }

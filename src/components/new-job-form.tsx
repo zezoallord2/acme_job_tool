@@ -53,8 +53,8 @@ export function NewJobForm() {
           </a>
         }
       >
-        Next: run the Job Description Analyzer. You will get the requirements,
-        then the evidence matrix.
+        Next: run the Job Check. You will get the requirements, then the match
+        breakdown.
         <div className="mt-2">
           <button
             type="button"
@@ -126,7 +126,7 @@ export function NewJobForm() {
         <Field
           label="Contact email"
           htmlFor="contactEmail"
-          hint="Optional. Used on the Application Capsule."
+          hint="Optional. Used on the Application Details."
         >
           <input
             id="contactEmail"

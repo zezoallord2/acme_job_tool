@@ -238,7 +238,7 @@ export function EvidenceExtractionPanel() {
           </Field>
           <p className="hint">
             Anything extracted becomes a proposal on the Learning page. Nothing
-            enters your Evidence Ledger until you approve it.
+            enters My Experience until you approve it.
           </p>
         </PromptLoader>
       )}
@@ -247,7 +247,7 @@ export function EvidenceExtractionPanel() {
 }
 
 // ---------------------------------------------------------------------------
-// Achievement Mining
+// Find My Wins
 // ---------------------------------------------------------------------------
 
 interface MinedFact {
@@ -376,7 +376,7 @@ export function AchievementMiningPanel() {
           {turn.nextQuestion}
         </Alert>
       ) : (
-        <Alert tone="info" title="Achievement Mining">
+        <Alert tone="info" title="Find My Wins">
           Acme Jobs asks one question at a time until the story can be defended.
           It never writes the bullet for you.
         </Alert>

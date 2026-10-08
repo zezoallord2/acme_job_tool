@@ -15,13 +15,19 @@ import type {
 export function Card({
   children,
   className,
+  id,
   as: Tag = "section",
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
   as?: "section" | "div" | "article" | "aside";
 }) {
-  return <Tag className={cn("card p-4 sm:p-5", className)}>{children}</Tag>;
+  return (
+    <Tag id={id} className={cn("card p-4 sm:p-5", className)}>
+      {children}
+    </Tag>
+  );
 }
 
 export function CardHeader({

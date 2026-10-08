@@ -40,9 +40,7 @@ export default async function SprintPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          14-Day Job Search Sprint
-        </h1>
+        <h1 className="page-title text-[var(--text)]">14-Day Plan</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           One evidence-first task per day. The sprint reuses your real work; it
           does not create invented busywork.
@@ -60,8 +58,8 @@ export default async function SprintPage() {
               </Link>
             }
           >
-            Your Career Snapshot, evidence and saved applications remain
-            available on Starter.
+            Your Quick Profile, evidence and saved applications remain available
+            on Starter.
           </Alert>
           <EmptyState
             title="A focused two-week operating rhythm"

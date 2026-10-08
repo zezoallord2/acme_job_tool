@@ -43,9 +43,7 @@ export default async function InterviewPrepPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Interview Prep
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Interview Prep</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Generate questions from the role and the resume you actually sent,
           then coach one answer at a time. No hire probability, ever.
@@ -115,7 +113,7 @@ export default async function InterviewPrepPage() {
           Practise a mock interview
         </Link>
         <Link href="/app/stories" className="btn-secondary">
-          Open the STAR Story Bank
+          Open the Interview Stories
         </Link>
       </div>
     </div>

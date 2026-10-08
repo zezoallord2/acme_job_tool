@@ -140,26 +140,26 @@ export function welcomeEmail(options: { name: string | null }): RenderedEmail {
       heading: "Welcome to Acme Jobs",
       intro: `${greeting} your account is ready.`,
       body:
-        "Start with the Evidence Ledger. It holds what is factually true about your career, " +
+        "Start with My Experience. It holds what is factually true about your career, " +
         "and every other part of the product is only allowed to use that.",
       cta: {
-        label: "Open your Evidence Ledger",
+        label: "Open My Experience",
         url: `${baseUrl()}/app/evidence`,
       },
       footnote:
-        "Everything here runs in Manual Mode by default: it costs nothing and needs no API key. " +
+        "One-click AI is used when it is available on your plan, and Manual Mode remains a no-cost fallback. " +
         defaultFootnote(),
     }),
     text: [
       greeting,
       "",
       "Your account is ready.",
-      "Start with the Evidence Ledger. It holds what is factually true about your career, " +
+      "Start with My Experience. It holds what is factually true about your career, " +
         "and every other part of the product is only allowed to use that.",
       "",
-      `Open your Evidence Ledger: ${baseUrl()}/app/evidence`,
+      `Open My Experience: ${baseUrl()}/app/evidence`,
       "",
-      "Everything here runs in Manual Mode by default: it costs nothing and needs no API key.",
+      "One-click AI is used when it is available on your plan, and Manual Mode remains a no-cost fallback.",
     ].join("\n"),
   };
 }

@@ -15,12 +15,101 @@ import {
 } from "@/services/job-service";
 import { evidenceRecords } from "@/services/evidence-service";
 import { hasCapability } from "@/services/entitlement-service";
+import { createJob } from "@/services/job-service";
+import { redirect } from "next/navigation";
 
 import {
   type ActionState,
   type AnalysisSubmitResult,
 } from "@/app/actions/state";
 import type { JobAnalysisOutput } from "@/ai/schemas";
+
+/** One-click default. Manual paste remains available only after this path fails. */
+export async function analyzeJobAction(
+  _prev: AnalysisSubmitResult,
+  formData: FormData,
+): Promise<AnalysisSubmitResult> {
+  try {
+    await requireSameOrigin();
+    const user = await requireUser();
+    await enforceRateLimit("aiAssist", { userId: user.id });
+    const jobId = String(formData.get("jobId"));
+    const job = await getJob(user.id, jobId);
+    const career = await prisma.careerMasterProfile.findUnique({
+      where: { userId: user.id },
+      select: { targetRolePrimary: true },
+    });
+    const outcome = await runWorkflow<JobAnalysisOutput>({
+      userId: user.id,
+      workflowId: "JOB_ANALYSIS",
+      context: {
+        description: job.rawDescription,
+        targetRole: career?.targetRolePrimary ?? "not specified",
+      },
+      evidence: await evidenceRecords(user.id),
+      userApiKey: await getUserApiKeyForWorkflow(user.id),
+      preferManual: false,
+    });
+    if (!outcome.ok)
+      return {
+        ok: false,
+        message: outcome.userMessage,
+        errors: outcome.errors,
+        prompt: outcome.manualFallback ?? undefined,
+      };
+    await saveJobAnalysis({
+      userId: user.id,
+      jobId,
+      output: outcome.data,
+      interactionId: outcome.interactionId,
+      workflowId: "JOB_ANALYSIS",
+      promptVersion: outcome.promptVersion,
+      provider: outcome.provider,
+      model: outcome.model,
+      manual: false,
+    });
+    const matrix = await buildEvidenceMatrix(user.id, jobId);
+    revalidatePath(`/app/jobs/${jobId}`);
+    revalidatePath("/app/jobs");
+    revalidatePath("/app");
+    return {
+      ok: true,
+      message: `Job checked. ${matrix.result.coverage.strong} strong matches, ${matrix.result.coverage.partial} possible matches and ${matrix.result.coverage.missing} gaps.`,
+      errors: [],
+    };
+  } catch (e) {
+    return { ok: false, message: userFacingMessage(asAppError(e)), errors: [] };
+  }
+}
+
+/** Saves a real public listing into the user's private workspace. */
+export async function saveDiscoveredJobAction(formData: FormData) {
+  let destination = "/app/jobs";
+  try {
+    await requireSameOrigin();
+    const user = await requireUser();
+    await enforceRateLimit("write", { userId: user.id });
+    const job = await createJob(user.id, {
+      title: String(formData.get("title") ?? ""),
+      company: String(formData.get("company") ?? ""),
+      location: String(formData.get("location") ?? ""),
+      description: String(formData.get("description") ?? ""),
+      sourceName: String(formData.get("sourceName") ?? "Public job board"),
+      sourceUrl: String(formData.get("sourceUrl") ?? ""),
+      inputSource: "MANUAL",
+    });
+    destination = `/app/jobs/${job.id}`;
+    revalidatePath("/app/jobs");
+    revalidatePath("/app");
+  } catch (e) {
+    const err = asAppError(e);
+    const duplicateId = (err.details as { jobId?: string } | undefined)?.jobId;
+    if (duplicateId) destination = `/app/jobs/${duplicateId}`;
+    else
+      destination = `/app/jobs?saveError=${encodeURIComponent(userFacingMessage(err))}`;
+  }
+  redirect(destination);
+}
 
 /** Returns the Manual Mode prompt package for a saved job. */
 export async function getAnalysisPromptAction(
@@ -54,7 +143,7 @@ export async function getAnalysisPromptAction(
   }
 }
 
-/** Validates a pasted AI response and persists the analysis + evidence matrix. */
+/** Validates a pasted AI response and persists the analysis + match breakdown. */
 export async function submitAnalysisAction(
   _prev: AnalysisSubmitResult,
   formData: FormData,
@@ -138,7 +227,7 @@ export async function rebuildMatrixAction(
     revalidatePath(`/app/jobs/${jobId}`);
     return {
       ok: true,
-      message: "Evidence matrix rebuilt from your current ledger.",
+      message: "Match breakdown updated from your confirmed experience.",
     };
   } catch (e) {
     return { ok: false, message: userFacingMessage(asAppError(e)) };

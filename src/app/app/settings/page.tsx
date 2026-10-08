@@ -51,9 +51,7 @@ export default async function SettingsPage({
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Settings
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Settings</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
           Your data, your AI configuration, your plan. Everything here runs on
           your own machine.
@@ -210,7 +208,7 @@ export default async function SettingsPage({
           <>
             <p className="text-sm text-[var(--text-muted)]">
               You are on the Starter plan. Complete Edition unlocks the Claim
-              Inspector, Readiness Gate, immutable sent versions, interview
+              Truth Check, Ready to Apply?, immutable sent versions, interview
               command centre, analytics and the daily priority engine.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">

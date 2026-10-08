@@ -64,7 +64,7 @@ export default async function ApplicationDetailPage({
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
+          <h1 className="page-title text-[var(--text)]">
             {app.job?.title ?? "Role not set"}
           </h1>
           <p className="mt-0.5 text-sm text-[var(--text-muted)]">
@@ -93,7 +93,7 @@ export default async function ApplicationDetailPage({
             href={`/app/applications/${app.id}/capsule`}
             className="btn-secondary"
           >
-            Application Capsule
+            Application Details
           </Link>
         </div>
       </header>
@@ -101,8 +101,8 @@ export default async function ApplicationDetailPage({
       {!isComplete ? (
         <Alert tone="info" title="Free view">
           You can move applications through states and record outcomes. Complete
-          Edition adds the Readiness Gate, immutable Sent Versions, the full
-          Application Capsule and interview prep.
+          Edition adds Ready to Apply?, immutable Sent Versions, the full
+          Application Details and interview prep.
         </Alert>
       ) : null}
 
@@ -140,7 +140,7 @@ export default async function ApplicationDetailPage({
       {readiness && isComplete ? (
         <Card>
           <CardHeader
-            title="Application Readiness Gate"
+            title="Ready to Apply?"
             description="Not an ATS score. These are the concrete conditions checked before you send."
             action={<ReadinessBadge status={readiness.status} />}
           />
@@ -186,7 +186,7 @@ export default async function ApplicationDetailPage({
             description="These block a clean READY status until confirmed, edited or removed."
             action={
               <Link href="/app/claims" className="btn-secondary">
-                Open Claim Inspector
+                Open Truth Check
               </Link>
             }
           />
@@ -214,7 +214,7 @@ export default async function ApplicationDetailPage({
           {app.resumes.length === 0 ? (
             <EmptyState
               title="No resume attached"
-              description="Tailor one from your Master Resume. Acme Jobs will only use evidence that supports each bullet."
+              description="Tailor one from your main resume. Acme Jobs will only use evidence that supports each bullet."
               action={
                 isComplete ? (
                   <Link
@@ -301,7 +301,7 @@ export default async function ApplicationDetailPage({
               </h3>
               <p className="mt-1 text-xs text-[var(--text-muted)]">
                 Sealed {formatDate(snapshot.sealedAt)}. This record is immutable
-                — later edits to your Master Resume do not change it.
+                — later edits to your main resume do not change it.
               </p>
             </div>
           ) : null}
@@ -331,7 +331,7 @@ export default async function ApplicationDetailPage({
               <li key={i.id} className="text-sm text-[var(--text-muted)]">
                 {i.company} · {i.role} · {formatDate(i.scheduledAt)}{" "}
                 <Link href={`/app/interviews/${i.id}`} className="underline">
-                  Command Center
+                  Interview Prep
                 </Link>
               </li>
             ))}

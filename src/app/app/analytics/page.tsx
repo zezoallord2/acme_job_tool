@@ -24,9 +24,7 @@ export default async function AnalyticsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Analytics
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Analytics</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Honest counts with their formulas. Acme Jobs will not tell you that
           one project raised your interview rate, because it cannot know that.

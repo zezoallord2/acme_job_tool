@@ -30,9 +30,7 @@ export default async function ClaimDefensePage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight text-[var(--text)]">
-          Claim Defense
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Claim Defense</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
           Paste a claim from your resume and find out whether you could actually
           defend it in an interview. A bad verdict is more useful than a
@@ -55,8 +53,8 @@ export default async function ClaimDefensePage() {
 
       {!canDefend ? (
         <Alert tone="info" title="Claim Defense is a Complete Edition feature">
-          Starter still includes the Claim Inspector, which shows which claims
-          lack evidence. Complete Edition adds the interactive defense check.
+          Starter still includes the Truth Check, which shows which claims lack
+          evidence. Complete Edition adds the interactive defense check.
         </Alert>
       ) : null}
 
