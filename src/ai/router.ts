@@ -353,57 +353,35 @@ export async function executeWithFallback(
   return { response, provider: manual, usedFallback: true, attempts };
 }
 
-export function aiCostSummary(): Array<{
+export function aiCostSummary(hasOwnKey = false): Array<{
   provider: string;
   available: boolean;
   costModel: string;
   label: string;
 }> {
   const e = env();
+  const server = (name: AIProviderName, key: string | undefined) => ({
+    provider: `${providerLabel(name)} (server, free tier)`,
+    available: Boolean(e.ACME_AI_ENABLED && key),
+    costModel: "ACME_FUNDED",
+    label: "Default for every account — included, subject to daily limits",
+  });
   return [
+    server("GEMINI", e.GEMINI_API_KEY),
+    server("OPENROUTER", e.OPENROUTER_API_KEY),
+    {
+      provider: "Your own key (BYOK)",
+      available: hasOwnKey,
+      costModel: "BYOK",
+      label:
+        "Optional. Used only when the server AI is unavailable; billed to your provider account",
+    },
     {
       provider: "Manual Mode",
       available: true,
       costModel: "FREE_MANUAL",
-      label: "Cost to Acme Jobs: $0",
-    },
-    {
-      provider: "OpenAI (BYOK)",
-      available: Boolean(e.OPENAI_API_KEY),
-      costModel: "BYOK",
-      label: "Billed to your OpenAI account",
-    },
-    {
-      provider: "Anthropic (BYOK)",
-      available: Boolean(e.ANTHROPIC_API_KEY),
-      costModel: "BYOK",
-      label: "Billed to your Anthropic account",
-    },
-    {
-      provider: "Google Gemini (BYOK)",
-      available: Boolean(e.GEMINI_API_KEY),
-      costModel: "BYOK",
-      label: "Billed to your Google account",
-    },
-    {
-      provider: "OpenRouter (BYOK)",
-      available: Boolean(e.OPENROUTER_API_KEY),
-      costModel: "BYOK",
-      label: "Billed to your OpenRouter account",
-    },
-    {
-      provider: "Acme Integrated AI",
-      available: Boolean(
-        e.ACME_AI_ENABLED &&
-        (e.OPENAI_API_KEY ||
-          e.ANTHROPIC_API_KEY ||
-          e.GEMINI_API_KEY ||
-          e.OPENROUTER_API_KEY),
-      ),
-      costModel: "ACME_FUNDED",
-      label: e.ACME_AI_ENABLED
-        ? "Included by Acme Jobs — subject to plan limits"
-        : "Disabled until the operator configures a production provider",
+      label:
+        "Always available as a secondary option: copy a prompt, paste the answer. Cost: $0",
     },
   ];
 }
