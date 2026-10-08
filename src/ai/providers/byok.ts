@@ -257,15 +257,21 @@ export class GeminiProvider extends BaseByokProvider {
 
   protected async call(request: AIRequest) {
     return callJson(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${encodeURIComponent(this.apiKey)}`,
+      // The key travels in a header, never the URL, so it cannot end up in an
+      // access log, a proxy log or an error message that echoes the URL.
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent`,
       {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": this.apiKey,
+        },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: request.systemPrompt }] },
           contents: [{ role: "user", parts: [{ text: request.userPrompt }] }],
           generationConfig: {
             temperature: request.temperature ?? 0.3,
+            maxOutputTokens: request.maxOutputTokens ?? 8192,
             responseMimeType: request.expectJson
               ? "application/json"
               : undefined,

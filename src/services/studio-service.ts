@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { Errors } from "@/lib/errors";
 import { hashContent } from "@/lib/crypto";
 import { runWorkflow, getUserApiKeyForWorkflow } from "@/workflows/runner";
+import { providerLabel } from "@/ai/router";
 import { evidenceRecords } from "@/services/evidence-service";
 import { RESUME_CONTENT_SCHEMA } from "@/services/resume-service";
 import type { WorkflowId } from "@/ai/workflow-ids";
@@ -77,6 +78,8 @@ export interface StudioResult {
   items: StudioItem[];
   warnings: string[];
   needsInput: string[];
+  /** Which AI produced the output: "Gemini", "OpenRouter", "Manual"… */
+  generatedBy?: string;
 }
 
 export interface StudioWorkflow {
@@ -116,9 +119,9 @@ export class StudioFailure extends Error {
 }
 
 /**
- * `raw` is the pasted response. It is required because Manual Mode is the only
- * path these run through in the zero-cost configuration, and an empty paste must
- * not be mistaken for a result.
+ * `raw` is the pasted response in Manual Mode. When it is empty the workflow
+ * runs on hosted AI (the default); a failure carries the Manual Mode prompt so
+ * the UI can offer it as an explicit second option.
  */
 async function run<T>(
   userId: string,
@@ -130,23 +133,39 @@ async function run<T>(
   warnings: string[];
   interactionId: string;
   promptVersion: string;
+  generatedBy: string;
 }> {
+  const pasted = raw.trim() ? raw : undefined;
   const outcome = await runWorkflow<T>({
     userId,
     workflowId: id,
     context,
     evidence: await evidenceRecords(userId),
     userApiKey: await getUserApiKeyForWorkflow(userId),
-    preferManual: true,
-    manualInput: raw,
+    preferManual: Boolean(pasted),
+    manualInput: pasted,
   });
   if (!outcome.ok) throw new StudioFailure(outcome);
+  lastGeneratedBy = outcome.manual ? "Manual" : providerLabel(outcome.provider);
   return {
     data: outcome.data,
     warnings: outcome.warnings,
     interactionId: outcome.interactionId,
     promptVersion: outcome.promptVersion,
+    generatedBy: lastGeneratedBy,
   };
+}
+
+/**
+ * The label of the provider behind the most recent `run` in this request. Set
+ * synchronously by `run` and read by the action right after `workflow.run`
+ * resolves, so the registry entries do not each need to thread it through.
+ */
+let lastGeneratedBy = "";
+export function consumeGeneratedBy(): string {
+  const value = lastGeneratedBy;
+  lastGeneratedBy = "";
+  return value;
 }
 
 /** AI evidence ids are numeric positions; only the user's own records survive. */
@@ -218,7 +237,9 @@ async function latestVoiceSamples(userId: string): Promise<string[]> {
 
 const RESUME_TAILORING: StudioWorkflow = {
   id: "RESUME_TAILORING",
-  capability: "RESUME_TAILORING_ADVANCED",
+  // Open to every plan; abuse is limited by the daily tailoring cap and the
+  // aiAssist rate limit rather than by hiding the feature.
+  capability: "RESUME_TAILORING_BASIC",
   title: "Tailor a resume to this job",
   description:
     "Reorders, re-words and selects from what your evidence supports. It never adds a fact you do not have, and it saves a draft — it does not send anything.",

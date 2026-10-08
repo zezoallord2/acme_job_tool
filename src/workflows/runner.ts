@@ -122,31 +122,17 @@ export async function runWorkflow<T>(
     return outcome;
   };
 
-  const preferredProvider = await prisma.userSettings.findUnique({
-    where: { userId: ctx.userId },
-    select: { aiProvider: true },
-  });
-
-  // When should a workflow run in Manual Mode instead of calling a model?
+  // When does a workflow run in Manual Mode instead of calling a model?
   //
-  // This decision was previously `preferredProvider?.aiProvider !== "LOCAL"`,
-  // which meant: unless the account had been pointed at a local Ollama endpoint,
-  // run Manual first. Almost nobody had that set, so essentially every workflow
-  // returned a copy-paste prompt package and the product looked inert.
-  //
-  // The user's saved mode now decides directly. Manual is opt-in; AI is the
-  // default, and Manual remains the fallback when AI is unavailable.
-  const manualSelected =
-    preferredProvider?.aiProvider === "MANUAL" ||
-    preferredProvider?.aiProvider === "RETIRED_LOCAL";
-
+  // Only on an explicit gesture: the caller passes `preferManual: true` (the
+  // "Use manual mode" button) or supplies a pasted response. A saved account
+  // preference used to force Manual Mode for every workflow, which is how the
+  // product came to look inert; AI is now the default for every account.
   const preferManual = forceLocal
     ? false
     : manualInput
       ? true
-      : ctx.preferManual === false
-        ? false
-        : manualSelected;
+      : ctx.preferManual === true;
 
   // --- Manual Mode: return the prompt package so the UI can offer it ---------
   // A pasted response always continues through validation, even in Manual Mode;
@@ -194,7 +180,7 @@ export async function runWorkflow<T>(
           code: "CIRCUIT_OPEN",
           message: "The AI provider is temporarily unavailable.",
           userMessage:
-            "The AI provider is temporarily unavailable. Manual Mode is ready — your work is saved.",
+            "AI is temporarily unavailable (too many recent failures). Nothing was generated. Try again in a few minutes, or use manual mode.",
           interactionId: interaction.id,
           traceId,
           manualFallback: manualPackage,
@@ -234,7 +220,9 @@ export async function runWorkflow<T>(
             code: "PROVIDER_UNAVAILABLE",
             message: "No AI provider is available.",
             userMessage:
-              "No AI provider is available right now. Manual Mode is ready — copy the prompt, paste the response back, and Acme Jobs will continue.",
+              attempts.length
+                ? `AI is unavailable right now — every provider failed (${attempts.join(", ")}). Nothing was generated. Retry, or use manual mode.`
+                : "AI is not configured on this server (no provider key). Nothing was generated. Use manual mode, or add your own key in Settings.",
             interactionId: interaction.id,
             traceId,
             manualFallback: manualPackage,
@@ -276,7 +264,7 @@ export async function runWorkflow<T>(
           ok: false,
           code: err.kind,
           message: err.message,
-          userMessage: `${appErr.message} Your work is saved. You can retry, or switch to Manual Mode.`,
+          userMessage: `AI failed: ${appErr.message} Nothing was generated. Retry, or use manual mode.`,
           interactionId: interaction.id,
           traceId,
           manualFallback: manualPackage,

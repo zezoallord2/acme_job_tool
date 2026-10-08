@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/primitives";
-import { LOCAL_EXECUTION_REQUEST } from "@/ai/provider";
 
 /**
- * Manual Mode client component. This is the default AI path in the zero-cost
- * configuration and is designed to feel like a first-class mode, not a fallback.
+ * Manual Mode client component: the secondary path when the user chooses it or
+ * when hosted AI is unavailable. AI is the default everywhere; this panel only
+ * appears after an explicit "Use manual mode" click or an AI failure.
  *
  * Flow: build prompt -> copy -> user runs it in their own assistant -> paste ->
  * validate -> continue.
@@ -95,47 +95,11 @@ export function ManualModePanel({
     });
   }, [raw, onValidate]);
 
-  const runLocal = useCallback(async () => {
-    const result = await onValidate(LOCAL_EXECUTION_REQUEST);
-    setState({
-      step: result.ok ? "VALIDATED" : "PROMPT",
-      copied: false,
-      validationErrors: result.ok
-        ? []
-        : [
-            "Local AI is not ready. Start Ollama and install the configured model, or continue with Manual Mode below.",
-          ],
-      repaired: result.repaired,
-    });
-  }, [onValidate]);
-
   return (
     <div className="space-y-4">
       <Alert tone="info" title={`Manual Mode — ${prompt.zeroCostNote}`}>
         {prompt.instructions}
       </Alert>
-
-      <div className="card-muted flex flex-wrap items-center justify-between gap-3 p-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-[var(--text)]">
-            Prefer one-click local AI?
-          </p>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">
-            Run this workflow through the private Ollama server configured by
-            the app owner. On local development that is this computer; customer
-            phones never download or run the model. If it is unavailable, your
-            work stays here and Manual Mode remains available.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={runLocal}
-          disabled={busy}
-        >
-          {busy ? "Running with private AI…" : "Run with Private AI"}
-        </button>
-      </div>
 
       <ol
         className="flex flex-wrap items-center gap-2 text-xs"

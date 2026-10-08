@@ -12,13 +12,33 @@ import { logWarn } from "@/lib/logger";
 import { globalBreaker, toFailureKind } from "@/ai/circuit-breaker";
 
 /**
- * Provider selection. Manual Mode is always present, so a zero-cost
- * configuration can never fail to produce a usable workflow.
+ * Provider selection.
  *
- * Default order: hosted providers with a usable free tier -> manual. The local
- * (Ollama) provider was removed; it resolved to an endpoint that does not exist
- * on hosted machines, so accounts silently fell back to Manual Mode.
+ * AI is the default for every account. The chain is:
+ *
+ *   server Gemini (free tier) -> server OpenRouter (free model) -> user's BYOK key
+ *
+ * driven by AI_MODE_PRIORITY. Manual Mode is never reached silently: when the
+ * chain is exhausted the caller gets an explicit failure and the UI offers
+ * Manual Mode as a separate button. Every hosted attempt goes through the
+ * process-wide circuit breaker so a dead provider costs one timeout, not one
+ * per request.
  */
+
+/** Human label for the provider that actually produced an output. */
+export const PROVIDER_LABELS: Record<AIProviderName, string> = {
+  GEMINI: "Gemini",
+  OPENROUTER: "OpenRouter",
+  OPENAI: "OpenAI",
+  ANTHROPIC: "Anthropic",
+  MANUAL: "Manual",
+  ACME_BASIC: "Acme AI",
+  RETIRED_LOCAL: "Manual",
+};
+
+export function providerLabel(name: AIProviderName | string): string {
+  return PROVIDER_LABELS[name as AIProviderName] ?? String(name);
+}
 
 export interface ProviderResolution {
   provider: AIProvider;
@@ -108,6 +128,38 @@ function serverKeyFor(name: AIProviderName): string | undefined {
   }
 }
 
+const SERVER_PROVIDERS: AIProviderName[] = [
+  "GEMINI",
+  "OPENROUTER",
+  "OPENAI",
+  "ANTHROPIC",
+];
+
+/**
+ * Ordered candidates: server-held keys in AI_MODE_PRIORITY order, then the
+ * user's own key. Server keys are skipped when ACME_AI_ENABLED is off.
+ */
+export function providerCandidates(deps: RouterDeps = {}): AIProvider[] {
+  const e = env();
+  const candidates: AIProvider[] = [];
+  if (e.ACME_AI_ENABLED) {
+    const order = e.AI_MODE_PRIORITY.map(
+      (p) => p.toUpperCase() as AIProviderName,
+    ).filter((p) => SERVER_PROVIDERS.includes(p));
+    for (const name of order) {
+      const key = serverKeyFor(name);
+      if (!key) continue;
+      const p = buildByok(name, key, true);
+      if (p) candidates.push(p);
+    }
+  }
+  if (deps.userApiKey?.key) {
+    const byok = buildByok(deps.userApiKey.provider, deps.userApiKey.key);
+    if (byok) candidates.push(byok);
+  }
+  return candidates;
+}
+
 export async function resolveProvider(
   deps: RouterDeps = {},
 ): Promise<ProviderResolution> {
@@ -123,58 +175,23 @@ export async function resolveProvider(
     };
   }
 
-  // 1. User's own key takes precedence when they supplied one.
-  if (deps.userApiKey?.key) {
-    const byok = buildByok(deps.userApiKey.provider, deps.userApiKey.key);
-    if (byok) {
-      return {
-        provider: byok,
-        chain: [deps.userApiKey.provider],
-        usedFallback: false,
-        reason: "Using your own API key.",
-      };
-    }
-  }
-
-  // 2. Configured zero-cost order.
-  const validProviders: AIProviderName[] = [
-    "MANUAL",
-    "OPENAI",
-    "ANTHROPIC",
-    "GEMINI",
-    "OPENROUTER",
-  ];
-  const order = e.AI_MODE_PRIORITY.map(
-    (p) => p.toUpperCase() as AIProviderName,
-  ).filter((p) => validProviders.includes(p));
-  if (order.length === 0) order.push("MANUAL");
-
-  for (const candidate of order) {
-    if (candidate === "MANUAL") {
-      return {
-        provider: manual,
-        chain: ["MANUAL"],
-        usedFallback: false,
-        reason: "Manual Mode.",
-      };
-    }
-    const key = serverKeyFor(candidate);
-    if (key) {
-      if (!e.ACME_AI_ENABLED) continue;
-      const p = buildByok(candidate, key, true);
-      if (p)
-        return {
-          provider: p,
-          chain: [candidate],
-          usedFallback: false,
-          reason: "Server-configured provider.",
-        };
-    }
+  const candidates = providerCandidates(deps);
+  const usable = candidates.find((p) => !globalBreaker.isOpen(p.name));
+  if (usable) {
+    return {
+      provider: usable,
+      chain: candidates.map((p) => p.name),
+      usedFallback: usable !== candidates[0],
+      reason:
+        usable.costModel === "BYOK"
+          ? "Using your own API key."
+          : "Server-configured provider.",
+    };
   }
 
   logWarn(
     { operation: "ai.resolve" },
-    "No configured AI provider available; using Manual Mode",
+    "No configured AI provider available; Manual Mode is the only option",
   );
   return {
     provider: manual,
@@ -199,44 +216,34 @@ export async function aiAvailability(
   deps: RouterDeps = {},
 ): Promise<AIAvailability> {
   const e = env();
+  const candidates = providerCandidates(deps);
 
-  if (!e.ACME_AI_ENABLED && !deps.userApiKey?.key) {
+  if (candidates.length === 0) {
+    const missing = (["GEMINI", "OPENROUTER"] as const).filter(
+      (p) => !serverKeyFor(p),
+    );
     return {
       available: false,
-      reason: "AI assistance is switched off on this server.",
-      fix: "Set ACME_AI_ENABLED=true, or add your own API key in Settings.",
+      reason: !e.ACME_AI_ENABLED
+        ? "AI assistance is switched off on this server (ACME_AI_ENABLED=false)."
+        : `No AI provider key is configured on this server${
+            missing.length ? ` (missing: ${missing.join(", ")})` : ""
+          }.`,
+      fix: "Set GEMINI_API_KEY (free at aistudio.google.com/apikey) or OPENROUTER_API_KEY on the server, or add your own key in Settings.",
     };
   }
 
   const resolution = await resolveProvider(deps);
   const name = resolution.provider.name;
-
   if (name === "MANUAL") {
-    const missing = (["GEMINI", "OPENAI", "ANTHROPIC"] as const).filter(
-      (p) => !serverKeyFor(p),
-    );
-    const named = missing.length
-      ? ` No key configured for ${missing.join(", ")}.`
-      : "";
     return {
       available: false,
-      reason: `No AI provider is reachable, so everything falls back to Manual Mode.${named}`,
-      fix: "Add a free Google AI Studio key in Settings (about 2 minutes, no card needed).",
+      reason:
+        "Every configured AI provider is temporarily failing (circuit breaker open).",
+      fix: "Try again in a few minutes, or use Manual Mode for now.",
     };
   }
-
-  const labels: Record<string, string> = {
-    GEMINI: "Google Gemini",
-    OPENAI: "OpenAI",
-    ANTHROPIC: "Anthropic",
-    OPENROUTER: "OpenRouter",
-    MANUAL: "Manual Mode",
-  };
-  return {
-    available: true,
-    provider: name,
-    label: labels[name] ?? name,
-  };
+  return { available: true, provider: name, label: providerLabel(name) };
 }
 
 /**
@@ -258,30 +265,8 @@ export async function executeWithFallback(
   request: AIRequest,
   deps: RouterDeps = {},
 ): Promise<ExecuteResult> {
-  const e = env();
   const attempts: ExecuteResult["attempts"] = [];
-
-  const candidates: AIProvider[] = [];
-
-  if (deps.userApiKey?.key) {
-    const byok = buildByok(deps.userApiKey.provider, deps.userApiKey.key);
-    if (byok) candidates.push(byok);
-  }
-
-  const configuredOrder = e.AI_MODE_PRIORITY.map(
-    (name) => name.toUpperCase() as AIProviderName,
-  );
-  for (const name of configuredOrder) {
-    if (name === "MANUAL") continue;
-    if (!e.ACME_AI_ENABLED) continue;
-    // Server-held credentials power the one-click production experience. They
-    // are never eligible unless the operator explicitly accepts that cost.
-    const key = serverKeyFor(name);
-    if (key) {
-      const p = buildByok(name, key, true);
-      if (p) candidates.push(p);
-    }
-  }
+  const candidates = providerCandidates(deps);
 
   for (const provider of candidates) {
     // Skip a provider that has recently failed hard. Retrying it costs the user
@@ -338,7 +323,10 @@ export async function executeWithFallback(
         errorCode: err.kind,
         kind: err.kind,
       });
-      if (!err.retryable) break;
+      // A non-retryable error on one provider (bad key, quota exhausted) says
+      // nothing about the next one, so keep walking the chain. Only an oversized
+      // prompt fails identically everywhere.
+      if (err.kind === "CONTENT_TOO_LARGE") break;
     }
   }
 

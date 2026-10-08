@@ -1,5 +1,10 @@
 import { assertProductionConfigSafe } from "@/lib/env";
-import { prisma } from "@/lib/db";
+
+// Imported lazily: `@/lib/db` validates the whole environment at import time,
+// so a static import made a missing AUTH_SECRET crash the preflight with a stack
+// trace instead of reporting it as a FAIL row.
+type Db = typeof import("@/lib/db").prisma;
+let db: Db | null = null;
 
 /**
  * Production preflight.
@@ -156,7 +161,8 @@ async function main(): Promise<void> {
     fail("DATABASE_URL", "Not set.");
   } else {
     try {
-      await prisma.$queryRaw`SELECT 1`;
+      db = (await import("@/lib/db")).prisma;
+      await db.$queryRaw`SELECT 1`;
       pass("DATABASE_URL", "Database reachable");
 
       // Confirm the schema matches the migrations, using the same tables the app
@@ -300,10 +306,27 @@ async function main(): Promise<void> {
   } else {
     pass("zero cost", "ZERO_COST_MODE is on; no paid service is required");
   }
-  if (e.ACME_AI_ENABLED === "true") {
+  if (e.ACME_AI_ENABLED === "false") {
     warn(
-      "acme ai",
-      "ACME_AI_ENABLED=true, which requires paid provider credits.",
+      "ai",
+      "ACME_AI_ENABLED=false. Server AI is off: every user sees 'AI unavailable' unless they add their own key.",
+      "Unset it (AI is on by default) and set GEMINI_API_KEY.",
+    );
+  } else if (!e.GEMINI_API_KEY && !e.OPENROUTER_API_KEY) {
+    warn(
+      "ai",
+      "No GEMINI_API_KEY or OPENROUTER_API_KEY. AI features will report 'AI unavailable' and offer Manual Mode.",
+      "Create a free key at https://aistudio.google.com/apikey and set GEMINI_API_KEY.",
+    );
+  } else {
+    pass(
+      "ai",
+      `server AI configured (${[
+        e.GEMINI_API_KEY ? "Gemini" : null,
+        e.OPENROUTER_API_KEY ? "OpenRouter" : null,
+      ]
+        .filter(Boolean)
+        .join(" -> ")})`,
     );
   }
 
@@ -391,5 +414,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await prisma.$disconnect().catch(() => undefined);
+    await db?.$disconnect().catch(() => undefined);
   });

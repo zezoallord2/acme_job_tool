@@ -37,7 +37,10 @@ const schema = z.object({
   TEST_DATABASE_URL: z.string().optional(),
 
   ZERO_COST_MODE: boolish.default("true"),
-  ACME_AI_ENABLED: boolish.default("false"),
+  // Server-held provider keys power the default one-click AI for every plan.
+  // Without a key this is harmless: the router reports "AI unavailable" and the
+  // UI offers Manual Mode as an explicit, secondary choice.
+  ACME_AI_ENABLED: boolish.default("true"),
 
   AUTH_SECRET: z.string().min(16, "AUTH_SECRET must be at least 16 characters"),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(336),
@@ -89,17 +92,14 @@ const schema = z.object({
   ANALYTICS_PROVIDER: z.enum(["internal"]).default("internal"),
   PRODUCT_LEARNING_ENABLED: boolish.default("true"),
 
-  // Ordered failover chain. `manual` is the terminal fallback: Manual Mode is a
-  // real supported mode, not an error state, and it must always be last so every
-  // paid feature has something to fall back to.
-  //
-  // The local/Ollama provider was removed: it pointed at an endpoint that does
-  // not exist on hosted machines, so new accounts silently landed on Manual
-  // Mode and looked broken. Hosted inference is the only supported path.
-  AI_MODE_PRIORITY: csv.default("openai,openrouter,gemini,anthropic,manual"),
+  // Ordered failover chain of SERVER-held keys. Gemini's free tier first, an
+  // OpenRouter free model second; a user's own key (BYOK) is tried after these.
+  // `manual` is never reached silently: when every provider fails the workflow
+  // returns an explicit error and the UI offers Manual Mode as a button.
+  AI_MODE_PRIORITY: csv.default("gemini,openrouter"),
   DEFAULT_AI_PROVIDER: z
     .enum(["manual", "openai", "anthropic", "gemini", "openrouter"])
-    .default("openai"),
+    .default("gemini"),
 
   // Which concrete model the Acme-funded "Basic AI" mode uses. Groq by default:
   // it has a genuinely usable free tier and an OpenAI-compatible API, so Basic
@@ -124,7 +124,49 @@ const schema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-3.5-flash-lite"),
   OPENROUTER_API_KEY: z.string().optional(),
-  OPENROUTER_MODEL: z.string().default("openrouter/auto"),
+  // `openrouter/free` routes to whichever free model is currently available, so a
+  // retired `:free` id cannot silently break the fallback. Pin a specific model
+  // (e.g. nvidia/nemotron-3-super-120b-a12b:free) for more predictable JSON.
+  OPENROUTER_MODEL: z.string().default("openrouter/free"),
+
+  // --- Abuse limits for the AI-first features (per user, per UTC day) -------
+  // Features are open to every plan; these caps, plus the hourly aiAssist rate
+  // limit, are what keep free-tier provider quota from being drained.
+  TAILOR_DAILY_CAP_FREE: z.coerce.number().int().min(0).default(5),
+  TAILOR_DAILY_CAP_PAID: z.coerce.number().int().min(0).default(30),
+  INTERVIEW_DAILY_CAP_FREE: z.coerce.number().int().min(0).default(3),
+  INTERVIEW_DAILY_CAP_PAID: z.coerce.number().int().min(0).default(20),
+  JOB_REFRESH_DAILY_CAP_FREE: z.coerce.number().int().min(0).default(10),
+  JOB_REFRESH_DAILY_CAP_PAID: z.coerce.number().int().min(0).default(40),
+
+  // --- Job search providers --------------------------------------------------
+  // Every keyed provider is a no-op when its key is missing, and says so in the
+  // provider health strip instead of silently returning nothing.
+  /** Optional allow-list of provider ids (comma separated). Empty = all. */
+  JOB_SEARCH_PROVIDERS: csv.default(""),
+  JOB_PROVIDER_TIMEOUT_MS: z.coerce.number().int().min(1000).default(9000),
+  ADZUNA_APP_ID: z.string().optional(),
+  ADZUNA_APP_KEY: z.string().optional(),
+  /** Adzuna is per-country; these are searched in addition to the target country. */
+  ADZUNA_COUNTRIES: csv.default("us,gb"),
+  JOOBLE_API_KEY: z.string().optional(),
+  /** Jooble's free key is 500 requests for its lifetime; budget it monthly. */
+  JOOBLE_MONTHLY_GLOBAL: z.coerce.number().int().min(0).default(40),
+  USAJOBS_API_KEY: z.string().optional(),
+  /** USAJobs requires the email you registered with as the User-Agent. */
+  USAJOBS_USER_AGENT: z.string().optional(),
+  THEMUSE_API_KEY: z.string().optional(),
+  SERPAPI_API_KEY: z.string().optional(),
+  SERPAPI_PAGES: z.coerce.number().int().min(1).max(5).default(2),
+  SERPAPI_MONTHLY_GLOBAL: z.coerce.number().int().min(0).default(240),
+  SERPAPI_MONTHLY_PER_USER: z.coerce.number().int().min(0).default(10),
+  /** JSearch via OpenWeb Ninja (the official host, x-api-key header). */
+  JSEARCH_API_KEY: z.string().optional(),
+  /** JSearch via RapidAPI (legacy host). Used when JSEARCH_API_KEY is unset. */
+  RAPIDAPI_KEY: z.string().optional(),
+  JSEARCH_PAGES: z.coerce.number().int().min(1).max(5).default(2),
+  JSEARCH_MONTHLY_GLOBAL: z.coerce.number().int().min(0).default(90),
+  JSEARCH_MONTHLY_PER_USER: z.coerce.number().int().min(0).default(10),
 
   ENTITLEMENT_PROVIDER: z.enum(["manual", "whop", "stripe"]).default("manual"),
   BILLING_PROVIDER: z.enum(["manual", "whop", "stripe"]).default("manual"),
