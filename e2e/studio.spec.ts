@@ -61,9 +61,12 @@ test("the studio lists every workflow a paid account can use", async ({
     page.getByRole("heading", { name: "Writing Studio", level: 1 }),
   ).toBeVisible();
 
-  // All nine tools are present and unlocked.
+  // All eight tools are present and unlocked. Tailoring has its own screen,
+  // linked from the top of the studio.
+  await expect(
+    page.getByRole("link", { name: "Tailor my resume" }),
+  ).toBeVisible();
   for (const title of [
-    "Tailor a resume to this job",
     "Rewrite one bullet",
     "Write a cover letter",
     "Answer an application question",
@@ -76,9 +79,9 @@ test("the studio lists every workflow a paid account can use", async ({
     await expect(page.getByText(title, { exact: true })).toBeVisible();
   }
 
-  await expect(page.getByText(/of 9 tools available/i)).toBeVisible();
-  // Manual Mode is the default, and it costs nothing.
-  await expect(page.getByText(/costs \$0 and needs no API key/i)).toBeVisible();
+  await expect(page.getByText(/of 8 tools available/i)).toBeVisible();
+  // AI is the default; manual mode is offered as the alternative.
+  await expect(page.getByText(/also\s+has a manual mode/i)).toBeVisible();
 });
 
 test("a studio workflow saves a real draft through the shared panel", async ({
@@ -126,7 +129,7 @@ test("a studio workflow saves a real draft through the shared panel", async ({
 
   await applicationSelect.selectOption({ index: 1 });
 
-  await page.getByRole("button", { name: "Build the prompt" }).click();
+  await page.getByRole("button", { name: /Use manual mode/ }).click();
   await expect(page.getByLabel("AI prompt to copy")).toBeVisible({
     timeout: 45_000,
   });
@@ -180,7 +183,7 @@ test("the voice profile records preferences without inventing career facts", asy
         "that mattered to the team.",
     );
 
-  await page.getByRole("button", { name: "Build the prompt" }).click();
+  await page.getByRole("button", { name: /Use manual mode/ }).click();
   await expect(page.getByLabel("AI prompt to copy")).toBeVisible({
     timeout: 45_000,
   });
@@ -224,7 +227,7 @@ test("a malformed response is rejected and nothing is saved", async ({
     .fill(
       "Managed reporting outputs for the finance team across three regions.",
     );
-  await page.getByRole("button", { name: "Build the prompt" }).click();
+  await page.getByRole("button", { name: /Use manual mode/ }).click();
   await expect(page.getByLabel("AI prompt to copy")).toBeVisible({
     timeout: 45_000,
   });
@@ -259,7 +262,7 @@ test("a free user sees the tools locked rather than broken", async ({
 
   await page.goto("/app/studio");
   await expect(
-    page.getByText("0 of 9 tools available on your plan"),
+    page.getByText("0 of 8 tools available on your plan"),
   ).toBeVisible();
 
   // The Manual Mode prompt is not offered to someone who cannot use it.

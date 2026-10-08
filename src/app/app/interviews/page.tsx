@@ -3,12 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listInterviews } from "@/services/interview-service";
 import { hasCapability } from "@/services/entitlement-service";
-import {
-  Card,
-  CardHeader,
-  EmptyState,
-  Stat,
-} from "@/components/ui/primitives";
+import { Card, CardHeader, EmptyState, Stat } from "@/components/ui/primitives";
 import { InterviewForm } from "@/components/interview-form";
 import { formatDateTime } from "@/lib/utils";
 

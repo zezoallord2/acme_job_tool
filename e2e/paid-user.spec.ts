@@ -127,9 +127,13 @@ test("settings state AI cost responsibility honestly", async ({ page }) => {
 
   await page.goto("/app/settings");
   await expect(page.getByText("Manual Mode").first()).toBeVisible();
-  await expect(page.getByText(/Cost to Acme Jobs: \$0/i).first()).toBeVisible();
-  await expect(page.getByText("Acme Integrated AI").first()).toBeVisible();
-  await expect(page.getByText(/Included by Acme Jobs/i).first()).toBeVisible();
+  await expect(page.getByText(/Cost: \$0/i).first()).toBeVisible();
+  await expect(
+    page.getByText(/Gemini \(server, free tier\)/).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/included, subject to daily limits/i).first(),
+  ).toBeVisible();
   await expect(
     page.getByText(/Billed to your provider account/i).first(),
   ).toBeVisible();

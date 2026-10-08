@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { startMockServices } from "./mock-services";
 
 /**
  * E2E global setup.
@@ -7,7 +8,9 @@ import { PrismaClient } from "@prisma/client";
  * limits that correctly protect a real deployment. Production limits are
  * unchanged: only test-run state is reset.
  */
-export default async function globalSetup(): Promise<void> {
+export default async function globalSetup(): Promise<() => Promise<void>> {
+  // Mock AI + job feed for the AI journey spec. Returned teardown closes it.
+  const mock = await startMockServices();
   const prisma = new PrismaClient();
   try {
     await prisma.rateLimitBucket.deleteMany({});
@@ -36,4 +39,5 @@ export default async function globalSetup(): Promise<void> {
   } finally {
     await prisma.$disconnect();
   }
+  return () => new Promise<void>((resolve) => mock.close(() => resolve()));
 }
