@@ -32,7 +32,7 @@ export default async function SignupPage() {
           </h1>
           <p className="mt-1 mb-5 text-sm text-[var(--text-muted)]">
             Free forever for Quick Profile, Job Analyzer, basic tailoring, one
-            STAR story and a five-question mock interview. No credit card.
+            STAR story and AI mock interviews. No credit card.
           </p>
           <AuthForm mode="signup" />
         </div>

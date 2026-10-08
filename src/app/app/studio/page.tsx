@@ -99,7 +99,7 @@ export default async function StudioPage() {
       >
         {unlocked > 0
           ? "Generated text is always a draft. Read it, check the cited evidence, then decide."
-          : "These tools are part of Complete Edition. Your Starter plan still includes the full My Experience, job analysis, match breakdown and a five-question mock interview."}
+          : "These tools are part of Complete Edition. Your Starter plan still includes the full My Experience, job analysis, match breakdown, AI resume tailoring and AI mock interviews."}
       </Alert>
 
       <div className="card flex flex-wrap items-center justify-between gap-3 p-4">

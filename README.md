@@ -7,9 +7,11 @@ answer, interview story or AI answer must trace back to something the user
 actually did. When the evidence does not exist, the product says so instead of
 producing a confident sentence.
 
-**Mandatory operating cost: $0.** No paid AI, no paid queue, no paid auth, no
-hosted storage, no hosted observability, no paid email. Manual AI Mode works
-without a single credential. See [docs/ZERO_COST_MODE.md](docs/ZERO_COST_MODE.md).
+**Mandatory operating cost: $0.** AI runs by default for every user on free
+hosted tiers (Gemini, then an OpenRouter free model, then the user's own key);
+Manual Mode stays available as a secondary button. Job search uses 8 keyless
+sources plus company career boards, and more with free keys. See
+[docs/ZERO_COST_MODE.md](docs/ZERO_COST_MODE.md) for every key and limit.
 
 ---
 
@@ -36,20 +38,22 @@ CAREER → Evidence Ledger → JOB → Evidence Matrix → APPLICATION
 
 ## Stack
 
-| Concern       | Choice                                        | Cost |
-| ------------- | --------------------------------------------- | ---- |
-| Framework     | Next.js 15 App Router, React 19, TypeScript   | $0   |
-| Database      | PostgreSQL 16                                 | $0   |
-| ORM           | Prisma 6                                      | $0   |
-| Queue         | PostgreSQL-backed worker                      | $0   |
-| Auth          | Argon2id + database sessions                  | $0   |
-| AI            | Manual Mode (default), optional local or BYOK | $0*  |
-| Storage       | Local filesystem                              | $0   |
-| Observability | Local JSON logs + database records            | $0   |
-| Analytics     | Internal PostgreSQL                           | $0   |
-| Billing       | Manual admin entitlements, optional webhook   | $0   |
+| Concern       | Choice                                       | Cost |
+| ------------- | -------------------------------------------- | ---- |
+| Framework     | Next.js 15 App Router, React 19, TypeScript  | $0   |
+| Database      | PostgreSQL 16                                | $0   |
+| ORM           | Prisma 6                                     | $0   |
+| Queue         | PostgreSQL-backed worker                     | $0   |
+| Auth          | Argon2id + database sessions                 | $0   |
+| AI            | Gemini free → OpenRouter free → BYOK; Manual | $0*  |
+| Job search    | 16 sources (keyless + free keys), AI-ranked  | $0   |
+| Storage       | Local filesystem                             | $0   |
+| Observability | Local JSON logs + database records           | $0   |
+| Analytics     | Internal PostgreSQL                          | $0   |
+| Billing       | Manual admin entitlements, optional webhook  | $0   |
 
-\* BYOK is billed to your own provider account and is never required.
+\* Free tiers have small daily limits; BYOK is billed to the user's own account
+and is never required.
 
 ---
 
@@ -114,18 +118,25 @@ Available at `http://localhost:3000`.
 
 ---
 
-## Manual AI Mode
+## AI by default, Manual Mode on request
 
-Every AI workflow works without any provider:
+Set `GEMINI_API_KEY` (free) and every AI workflow works in one click for every
+plan:
 
-1. Acme Jobs produces a prompt with a version tag and a schema.
-2. You paste the response into any tool you like, or answer yourself.
-3. You paste it back.
-4. Acme Jobs validates it against the schema, repairs it when unambiguous, and
-   asks you about anything it cannot verify.
+- **Tailor my resume** (`/app/tailor`) — pick a job and a resume, get a full
+  tailored resume with highlighted changes, a keyword match score and gap
+  questions. A deterministic guard blocks any new number, skill, employer, title
+  or date (`src/domain/tailoring.ts`, proven by `npm run test:eval`).
+- **Jobs for You** (`/app/jobs`) — an AI search agent plans queries from your CV,
+  searches every source, shows which sources answered, and ranks the results
+  with a one-line "why this fits".
+- **Mock interview** (`/app/interviews/practice`) — Quick / Standard / Deep,
+  questions built from the job and the gaps in your evidence, coaching on every
+  answer, and a summary.
 
-Responses are never trusted silently. Unknown fields are reported, not dropped.
-Repairable formatting is fixed and the repair is disclosed.
+Every result says which AI produced it. If AI is unavailable you get a clear
+error and a **Use manual mode** button: Acme Jobs gives you a versioned prompt,
+you paste the answer back, and it is validated exactly like an API response.
 
 ---
 

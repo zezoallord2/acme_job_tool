@@ -32,7 +32,7 @@ const LABELS: Record<string, string> = {
   CAREER_NARRATIVE: "Career Story",
   STAR_BANK_BASIC: "One STAR story",
   STAR_BANK_FULL: "Full Interview Stories",
-  MOCK_INTERVIEW_BASIC: "Five-question mock interview",
+  MOCK_INTERVIEW_BASIC: "AI mock interviews",
   MOCK_INTERVIEW_ADVANCED: "Adaptive mock interviews",
   DEFEND_THIS_CLAIM: "Can I Defend This?",
   INTERVIEW_COMMAND_CENTER: "Interview Prep",

@@ -158,7 +158,7 @@ export default function HomePage() {
               </h2>
               <p className="mt-2 text-sm text-[var(--text-muted)]">
                 Quick Profile, Resume Quick Check, Job Analyzer, basic
-                tailoring, one STAR story and a five-question mock interview.
+                tailoring, one STAR story and AI mock interviews.
                 Enough to improve one real application.
               </p>
               <p
