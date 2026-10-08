@@ -402,6 +402,8 @@ export async function submitQuestionsAction(
           category: q.category,
           rationale: q.rationale,
           expectedSignals: q.expectedSignals,
+          slot: null,
+          targetsRequirement: null,
         })),
       },
       message: `${result.questions.length} question(s) ready to practise.`,

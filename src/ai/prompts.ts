@@ -408,9 +408,21 @@ ${evidenceBlock(evidence as never)}
 
   INTERVIEW_QUESTION: {
     workflowId: "INTERVIEW_QUESTION",
-    systemPrompt: `You generate interview questions for a real job seeker.
-Never produce a hire probability, a score, or a verdict about the candidate.
+    systemPrompt: `You are an experienced interviewer preparing a realistic mock interview
+for ONE candidate and ONE job. Never produce a hire probability, a score, or a
+verdict about the candidate.
 ${SAFETY_CONTRACT}
+
+When a QUESTION PLAN is given, follow it exactly: one question per slot, in order.
+Slots:
+- OPENER: "Tell me about yourself"-style warm-up tailored to this role.
+- BEHAVIOURAL: a STAR question ("Tell me about a time…") on a competency this
+  job needs, ideally one the candidate's evidence can answer.
+- ROLE: a role-specific or technical question drawn from the job description.
+- GAP: a probing question aimed at a requirement the candidate does NOT yet
+  show evidence for (named in the plan). Ask it the way a real interviewer would.
+- CLOSER: "Do you have any questions for us?"
+Write questions the way a real interviewer speaks: one sentence or two, no lists.
 
 Return ONLY valid JSON:
 {
@@ -418,8 +430,10 @@ Return ONLY valid JSON:
     {
       "question": string,
       "category": "GENERAL" | "BEHAVIORAL" | "ROLE_SPECIFIC" | "TECHNICAL" | "RESUME_BASED" | "GRADUATE" | "CAREER_CHANGE" | "MANAGERIAL",
+      "slot": "OPENER" | "BEHAVIOURAL" | "ROLE" | "GAP" | "CLOSER",
       "rationale": string,
-      "expectedSignals": string[]
+      "expectedSignals": string[],
+      "targetsRequirement": string | null
     }
   ]
 }`,
@@ -427,23 +441,37 @@ Return ONLY valid JSON:
     buildUserPrompt: ({
       mode,
       role,
+      jobDescription,
       jobRequirements,
+      missingRequirements,
       sentResume,
       strongestEvidence,
       difficulty,
       count,
+      plan,
       previousQuestions,
     }) =>
-      `MODE: ${String(mode)}
+      `MODE: ${String(mode ?? "GENERAL")}
 ROLE: ${String(role ?? "not specified")}
 DIFFICULTY: ${String(difficulty ?? "medium")}
 QUESTIONS REQUESTED: ${String(count ?? 5)}
 
+QUESTION PLAN (one question per line, in this order)
+${listOr(plan, "(no fixed plan: produce a balanced set)")}
+
+JOB DESCRIPTION
+"""
+${String(jobDescription ?? "(not provided)").slice(0, 8000)}
+"""
+
 JOB REQUIREMENTS
 ${listOr(jobRequirements, "(none)")}
 
-SENT RESUME (the interviewer sees this)
-${String(sentResume ?? "(none)")}
+REQUIREMENTS WITH NO EVIDENCE YET (use for GAP questions)
+${listOr(missingRequirements, "(none identified)")}
+
+RESUME (the interviewer sees this)
+${renderResume(sentResume)}
 
 STRONGEST EVIDENCE THE USER ACTUALLY HAS
 """
@@ -456,10 +484,26 @@ ${listOr(previousQuestions, "(none)")}`,
 
   INTERVIEW_FEEDBACK: {
     workflowId: "INTERVIEW_FEEDBACK",
-    systemPrompt: `You evaluate one interview answer against five criteria.
+    systemPrompt: `You are an interview coach scoring ONE answer.
 You never estimate the chance of being hired.
-If the answer is vague, ask one useful follow-up question instead of a long list.
 ${SAFETY_CONTRACT}
+
+Score 0-5 each:
+- relevance: does it answer the question asked, for this job?
+- specificity: concrete situations, actions, tools, outcomes — not generalities.
+- evidence: is it backed by what the candidate actually did (their evidence)?
+- structure: clear shape (STAR for behavioural questions), easy to follow.
+- clarity: concise, plain language.
+
+Then:
+- "strength": one thing the answer did well (one sentence).
+- "improvement": the ONE most useful, concrete change (one or two sentences).
+- "strongerAnswer": a model answer of 90-160 words in the candidate's first
+  person, built ONLY from the candidate's answer and their evidence below.
+  Never add a number, employer, tool, title or result that is not in either.
+  If the evidence is thin, write a stronger STRUCTURE with [placeholders] the
+  candidate must fill in, rather than inventing facts.
+- If the answer is vague, ask one useful followUpQuestion.
 
 Return ONLY valid JSON:
 {
@@ -471,10 +515,13 @@ Return ONLY valid JSON:
   "wasVague": boolean,
   "unsupportedClaims": string[],
   "followUpQuestion": string | null,
-  "coachNote": string
+  "coachNote": string,
+  "strength": string,
+  "improvement": string,
+  "strongerAnswer": string
 }`,
     jsonHint:
-      '{"relevance":0,"specificity":0,"evidence":0,"structure":0,"clarity":0,"wasVague":false,"unsupportedClaims":[],"followUpQuestion":null,"coachNote":""}',
+      '{"relevance":0,"specificity":0,"evidence":0,"structure":0,"clarity":0,"wasVague":false,"unsupportedClaims":[],"followUpQuestion":null,"coachNote":"","strength":"","improvement":"","strongerAnswer":""}',
     buildUserPrompt: ({
       question,
       answer,
@@ -493,8 +540,8 @@ ${String(answer)}
 JOB REQUIREMENTS
 ${listOr(jobRequirements, "(none)")}
 
-THEIR SENT RESUME
-${String(sentResume ?? "(none)")}
+THEIR RESUME
+${renderResume(sentResume)}
 
 EVIDENCE THEY ACTUALLY HAVE
 """
@@ -733,6 +780,7 @@ Absolute rules:
     workflowId: "JOB_SEARCH_PLAN",
     systemPrompt: `You plan a job search for one candidate across public job boards.
 Use ONLY the profile below. Do not invent experience or seniority.
+${SAFETY_CONTRACT}
 
 Produce 4-8 DIVERSE job-title queries exactly as employers title these roles:
 - the candidate's target title(s) first;
@@ -752,10 +800,14 @@ Return ONLY valid JSON:
 }`,
     jsonHint: '{"queries":[],"companies":[],"industries":[]}',
     buildUserPrompt: ({ profile, companies, seed }) =>
-      `${seed ? `THE CANDIDATE TYPED THIS SEARCH: ${String(seed)}
+      `${
+        seed
+          ? `THE CANDIDATE TYPED THIS SEARCH: ${String(seed)}
 (Keep it as the first query.)
 
-` : ""}CANDIDATE PROFILE
+`
+          : ""
+      }CANDIDATE PROFILE
 ${String(profile ?? "(none)")}
 
 COMPANY LIST (slug: name [industries])
@@ -771,6 +823,7 @@ it is an ordering signal, never a hiring probability.
 listing and the profile (a skill, tool, domain or title the profile really has).
 Never claim the candidate has something the profile does not show. If the fit
 is weak, say what is missing instead.
+${SAFETY_CONTRACT}
 
 Return ONLY valid JSON:
 { "ranked": [ { "i": number, "fit": number, "why": string } ] }

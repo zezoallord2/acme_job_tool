@@ -2092,6 +2092,12 @@ model InterviewAnswer {
   followUpQuestion  String?
   coachNote         String?
   wasVague          Boolean @default(false)
+  /// One thing the answer did well.
+  strength          String?
+  /// The single most useful improvement.
+  improvement       String?
+  /// A stronger answer built only from the user's own evidence.
+  suggestedAnswer   String?
 
   createdAt DateTime @default(now())
 

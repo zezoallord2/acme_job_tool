@@ -77,14 +77,14 @@ export const PROMPT_VERSIONS: Record<
     retired: ["v1", "v2", "v3"],
   },
   INTERVIEW_QUESTION: {
-    active: "INTERVIEW_QUESTION_PROMPT_v5",
+    active: "INTERVIEW_QUESTION_PROMPT_v6",
     candidates: [],
-    retired: ["v1", "v2", "v3", "v4"],
+    retired: ["v1", "v2", "v3", "v4", "v5"],
   },
   INTERVIEW_FEEDBACK: {
-    active: "INTERVIEW_FEEDBACK_PROMPT_v4",
+    active: "INTERVIEW_FEEDBACK_PROMPT_v5",
     candidates: [],
-    retired: ["v1", "v2", "v3"],
+    retired: ["v1", "v2", "v3", "v4"],
   },
   POST_INTERVIEW_REVIEW: {
     active: "POST_INTERVIEW_REVIEW_PROMPT_v3",

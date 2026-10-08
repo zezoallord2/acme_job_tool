@@ -194,7 +194,8 @@ describe("Entitlements", () => {
 
   it("applies numeric limits on the free plan", () => {
     expect(PLAN_LIMITS.FREE.starStories).toBe(1);
-    expect(PLAN_LIMITS.FREE.mockInterviewQuestions).toBe(5);
+    // Mock interviews are not limited by plan; a daily session cap applies.
+    expect("mockInterviewQuestions" in PLAN_LIMITS.FREE).toBe(false);
     expect(PLAN_LIMITS.COMPLETE.starStories).toBe(Number.POSITIVE_INFINITY);
   });
 });

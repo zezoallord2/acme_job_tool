@@ -120,7 +120,6 @@ export function planHasCapability(
 /** Hard numeric limits enforced server-side, not just hidden in the UI. */
 export interface PlanLimits {
   starStories: number;
-  mockInterviewQuestions: number;
   aiAssistCallsPerDay: number;
   savedApplications: number;
   resumeVersions: number;
@@ -131,14 +130,12 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
   FREE: {
     starStories: 1,
-    mockInterviewQuestions: 5,
     aiAssistCallsPerDay: 20,
     savedApplications: 3,
     resumeVersions: 1,
   },
   COMPLETE: {
     starStories: Number.POSITIVE_INFINITY,
-    mockInterviewQuestions: Number.POSITIVE_INFINITY,
     aiAssistCallsPerDay: Number.POSITIVE_INFINITY,
     savedApplications: Number.POSITIVE_INFINITY,
     resumeVersions: Number.POSITIVE_INFINITY,

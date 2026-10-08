@@ -67,13 +67,13 @@ export default async function InterviewPrepPage() {
         </Alert>
       ) : null}
 
-      {!canPrep ? (
-        <Alert tone="info" title="Interview Prep is a Complete Edition feature">
-          Starter includes a five-question mock interview. Complete Edition adds
-          the Question Builder, the Answer Coach and the Interview Command
-          Center.
-        </Alert>
-      ) : null}
+      <Alert tone="info" title="Want a full practice run?">
+        The{" "}
+        <Link href="/app/interviews/practice" className="underline">
+          mock interview
+        </Link>{" "}
+        builds questions from a job and coaches every answer, on every plan.
+      </Alert>
 
       <Card>
         <CardHeader
@@ -88,8 +88,8 @@ export default async function InterviewPrepPage() {
             }))}
           />
         ) : (
-          <Link href="/app/settings" className="btn-primary">
-            Upgrade to unlock
+          <Link href="/app/interviews/practice" className="btn-primary">
+            Start a mock interview
           </Link>
         )}
       </Card>
@@ -102,8 +102,8 @@ export default async function InterviewPrepPage() {
         {canPrep ? (
           <AnswerCoachPanel />
         ) : (
-          <Link href="/app/settings" className="btn-primary">
-            Upgrade to unlock
+          <Link href="/app/interviews/practice" className="btn-primary">
+            Start a mock interview
           </Link>
         )}
       </Card>

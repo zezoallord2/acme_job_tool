@@ -201,6 +201,12 @@ export const InterviewQuestionsSchema = z.object({
         ]),
         rationale: z.string().max(600).default(""),
         expectedSignals: strArray(10),
+        // v6: which slot of the mock interview plan this question fills.
+        slot: z
+          .enum(["OPENER", "BEHAVIOURAL", "ROLE", "GAP", "CLOSER"])
+          .nullable()
+          .default(null),
+        targetsRequirement: z.string().max(300).nullable().default(null),
       }),
     )
     .min(1)
@@ -217,6 +223,10 @@ export const InterviewFeedbackSchema = z.object({
   unsupportedClaims: strArray(20),
   followUpQuestion: z.string().max(600).nullable().default(null),
   coachNote: z.string().max(1200).default(""),
+  // v5: per-answer coaching.
+  strength: z.string().max(400).default(""),
+  improvement: z.string().max(600).default(""),
+  strongerAnswer: z.string().max(2000).default(""),
 });
 
 export const PostInterviewReviewSchema = z.object({

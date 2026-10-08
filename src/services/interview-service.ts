@@ -346,9 +346,14 @@ export async function recordAnswer(input: {
     },
   });
 
-  const asked = await prisma.interviewQuestion.count({
+  // Progress is the number of distinct questions ANSWERED. Counting questions
+  // marked a pre-generated session complete after its first answer.
+  const answered = await prisma.interviewAnswer.findMany({
     where: { sessionId: input.sessionId },
+    distinct: ["questionId"],
+    select: { questionId: true },
   });
+  const asked = answered.length;
   await prisma.interviewSession.update({
     where: { id: input.sessionId },
     data: {
