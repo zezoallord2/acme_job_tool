@@ -247,20 +247,17 @@ describe("jobs for you pipeline", () => {
     expect(buildPreference(profile, {}).workMode).toBe("ONSITE");
   });
 
-  it("enforces the free plan row limit on the server", () => {
+  it("never hides results behind a plan", () => {
+    // Job search shows every match on every plan; paging is a UI concern.
+    expect("jobsForYouResults" in PLAN_LIMITS.FREE).toBe(false);
     const rows = Array.from({ length: 12 }, (_, index) => index);
-    expect(limitResults(rows, PLAN_LIMITS.FREE.jobsForYouResults)).toHaveLength(
-      5,
-    );
-    expect(
-      limitResults(rows, PLAN_LIMITS.COMPLETE.jobsForYouResults),
-    ).toHaveLength(12);
-    expect(PLAN_LIMITS.FREE.jobsForYouResults).toBeLessThan(
-      PLAN_LIMITS.COMPLETE.jobsForYouResults,
-    );
-    expect(PLAN_LIMITS.FREE.jobsForYouQueries).toBeLessThan(
-      PLAN_LIMITS.COMPLETE.jobsForYouQueries,
-    );
+    expect(limitResults(rows, Number.POSITIVE_INFINITY)).toHaveLength(12);
+  });
+
+  it("drops the place entirely when widened to any location", () => {
+    const anywhere = buildPreference(profile, { area: "any" });
+    expect(anywhere.city).toBeNull();
+    expect(anywhere.countryCode).toBeNull();
   });
 
   it("keeps a Cairo profile free of Germany jobs even with Any work style", () => {

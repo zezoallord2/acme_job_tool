@@ -20,6 +20,10 @@ export const WORKFLOW_IDS = [
   // Reads a user-supplied CV and returns a structured profile. Extraction only:
   // the model may report what the document says and nothing more.
   "PROFILE_IMPORT",
+  // Job search agent: plan diverse queries from the profile, then re-rank the
+  // merged results against it. Neither writes anything about the user.
+  "JOB_SEARCH_PLAN",
+  "JOB_RERANK",
 ] as const;
 
 export type WorkflowId = (typeof WORKFLOW_IDS)[number];
@@ -115,6 +119,16 @@ export const PROMPT_VERSIONS: Record<
   },
   PROFILE_IMPORT: {
     active: "PROFILE_IMPORT_v1",
+    candidates: [],
+    retired: [],
+  },
+  JOB_SEARCH_PLAN: {
+    active: "JOB_SEARCH_PLAN_v1",
+    candidates: [],
+    retired: [],
+  },
+  JOB_RERANK: {
+    active: "JOB_RERANK_v1",
     candidates: [],
     retired: [],
   },

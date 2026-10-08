@@ -2,11 +2,28 @@
  * Public job discovery providers.
  *
  * Providers return real, externally hosted vacancies. They never manufacture a
- * result and a failing provider is isolated so another source can still answer.
+ * result, a keyed provider without its key is a no-op that SAYS so (see
+ * `unavailableReason`), and a failing provider is isolated so the other sources
+ * still answer. Errors propagate to the caller; they are never swallowed here.
+ *
+ * The full registry lives in src/jobs/sources/registry.ts.
  */
+import {
+  filterByTitle,
+  parseRelativePosted,
+  plainText,
+  ProviderError,
+  cached,
+  requestJson,
+  isRemoteText,
+  usable,
+} from "@/jobs/sources/common";
+
 export interface JobSearchQuery {
   title: string;
   location?: string;
+  /** ISO-3166 alpha-2, lower case (e.g. "eg", "us"), when known. */
+  countryCode?: string;
   workArrangement?: "REMOTE" | "HYBRID" | "ON_SITE" | "NO_PREFERENCE";
   keywords?: string[];
 }
@@ -22,12 +39,69 @@ export interface DiscoveredJob {
   sourceUrl: string;
   postedAt: string | null;
   tags: string[];
+  /** Original publisher when the provider aggregates (e.g. "LinkedIn"). */
+  via?: string | null;
+}
+
+export type ProviderKind = "keyless" | "keyed" | "company-boards";
+
+export interface ProviderMeta {
+  label: string;
+  kind: ProviderKind;
+  /** Where to get a key (keyed providers). */
+  signupUrl?: string;
+  /** Required credit shown next to each listing. */
+  attribution?: { name: string; url: string };
 }
 
 export interface JobSearchProvider {
   readonly id: string;
+  readonly meta?: ProviderMeta;
+  /** Why this provider cannot run right now ("key missing"), or null. */
+  unavailableReason?(): string | null;
   search(query: JobSearchQuery): Promise<DiscoveredJob[]>;
 }
+
+const FEED_TTL_MS = 15 * 60 * 1000;
+
+function terms(query: JobSearchQuery): string[] {
+  return [query.title, ...(query.keywords ?? [])]
+    .flatMap((value) => value.toLowerCase().split(/[^a-z0-9+#.]+/))
+    .filter((value) => value.length > 1);
+}
+
+/** Used to order rows inside one provider; global ranking happens later. */
+function relevance(job: DiscoveredJob, query: JobSearchQuery): number {
+  const haystack =
+    `${job.title} ${job.description} ${job.tags.join(" ")}`.toLowerCase();
+  const wanted = terms(query);
+  let score = job.title.toLowerCase().includes(query.title.toLowerCase())
+    ? 8
+    : 0;
+  score += wanted.filter((term) => haystack.includes(term)).length;
+  if (
+    query.location &&
+    job.location.toLowerCase().includes(query.location.toLowerCase())
+  ) {
+    score += 3;
+  }
+  if (query.workArrangement === "REMOTE" && job.workArrangement === "REMOTE") {
+    score += 3;
+  }
+  return score;
+}
+
+function rank(jobs: DiscoveredJob[], query: JobSearchQuery, limit = 60) {
+  return filterByTitle(jobs, query, Number.POSITIVE_INFINITY)
+    .map((job) => ({ job, score: relevance(job, query) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ job }) => job);
+}
+
+// ---------------------------------------------------------------------------
+// Arbeitnow (keyless). One feed, no server-side search: download, filter here.
+// ---------------------------------------------------------------------------
 
 interface ArbeitnowJob {
   slug?: string;
@@ -42,134 +116,59 @@ interface ArbeitnowJob {
   created_at?: number;
 }
 
-const SOURCE_CACHE_TTL_MS = 15 * 60 * 1000;
-
-interface CachedSource<T> {
-  expiresAt: number;
-  jobs: T[];
-}
-
-const sourceCache = new Map<string, CachedSource<ArbeitnowJob>>();
-
-/** SerpAPI bills per query, so each distinct query is cached separately. */
-const serpCache = new Map<string, CachedSource<SerpApiGoogleJob>>();
-
-function plainText(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/gi, '"')
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function terms(query: JobSearchQuery): string[] {
-  return [query.title, ...(query.keywords ?? [])]
-    .flatMap((value) => value.toLowerCase().split(/[^a-z0-9+#.]+/))
-    .filter((value) => value.length > 1);
-}
-
-function relevance(job: DiscoveredJob, query: JobSearchQuery): number {
-  const haystack =
-    `${job.title} ${job.description} ${job.tags.join(" ")}`.toLowerCase();
-  const wanted = terms(query);
-  const title = query.title.toLowerCase();
-  let score = job.title.toLowerCase().includes(title) ? 8 : 0;
-  score += wanted.filter((term) => haystack.includes(term)).length;
-  if (
-    query.location &&
-    job.location.toLowerCase().includes(query.location.toLowerCase())
-  ) {
-    score += 3;
-  }
-  if (query.workArrangement === "REMOTE" && job.workArrangement === "REMOTE") {
-    score += 3;
-  }
-  return score;
-}
-
-/** Free, keyless listings sourced by Arbeitnow from public employer ATS feeds. */
 export class ArbeitnowProvider implements JobSearchProvider {
   readonly id: string;
+  readonly meta: ProviderMeta;
 
   constructor(
     private readonly endpoint = "https://www.arbeitnow.com/api/job-board-api",
     id = "arbeitnow-eu",
   ) {
     this.id = id;
+    this.meta = {
+      label: id === "arbeitnow-uk" ? "Arbeitnow UK" : "Arbeitnow",
+      kind: "keyless",
+      attribution: { name: "Arbeitnow", url: "https://www.arbeitnow.com" },
+    };
   }
 
   async search(query: JobSearchQuery): Promise<DiscoveredJob[]> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
-    try {
-      const cached = sourceCache.get(this.endpoint);
-      let sourceJobs: ArbeitnowJob[];
-      if (cached && cached.expiresAt > Date.now()) {
-        sourceJobs = cached.jobs;
-      } else {
-        const response = await fetch(this.endpoint, {
-          headers: { accept: "application/json" },
-          signal: controller.signal,
-          // The feed is over Next's 2 MB data-cache limit. Cache the parsed data
-          // in-process instead of repeatedly downloading it or logging warnings.
-          cache: "no-store",
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const body = (await response.json()) as { data?: ArbeitnowJob[] };
-        sourceJobs = body.data ?? [];
-        sourceCache.set(this.endpoint, {
-          expiresAt: Date.now() + SOURCE_CACHE_TTL_MS,
-          jobs: sourceJobs,
-        });
-      }
-      return sourceJobs
-        .map((job): DiscoveredJob | null => {
-          const title = String(job.title ?? "").trim();
-          const company = String(job.company_name ?? "").trim();
-          const url = String(job.url ?? "").trim();
-          const description = plainText(String(job.description ?? ""));
-          if (!title || !company || !url || description.length < 80)
-            return null;
-          return {
-            externalId: String(job.slug ?? url),
-            provider: this.id,
-            title,
-            company,
-            location: String(
-              job.location ?? (job.remote ? "Remote" : "Location not listed"),
-            ),
-            workArrangement: job.remote ? "REMOTE" : null,
-            description: description.slice(0, 20_000),
-            sourceUrl: url,
-            postedAt: job.created_at
-              ? new Date(job.created_at * 1000).toISOString()
-              : null,
-            tags: [...(job.tags ?? []), ...(job.job_types ?? [])].slice(0, 20),
-          };
-        })
-        .filter((job): job is DiscoveredJob => job !== null)
-        .map((job) => ({ job, score: relevance(job, query) }))
-        .filter(({ score }) => score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 40)
-        .map(({ job }) => job);
-    } finally {
-      clearTimeout(timer);
-    }
+    const sourceJobs = await cached(
+      `arbeitnow:${this.endpoint}`,
+      FEED_TTL_MS,
+      async () => {
+        const body = await requestJson<{ data?: ArbeitnowJob[] }>(
+          this.endpoint,
+        );
+        return body.data ?? [];
+      },
+    );
+    const jobs = sourceJobs
+      .map((job): DiscoveredJob => ({
+        externalId: String(job.slug ?? job.url ?? ""),
+        provider: this.id,
+        title: String(job.title ?? "").trim(),
+        company: String(job.company_name ?? "").trim(),
+        location: String(
+          job.location ?? (job.remote ? "Remote" : "Location not listed"),
+        ),
+        workArrangement: job.remote ? "REMOTE" : null,
+        description: plainText(String(job.description ?? "")).slice(0, 20_000),
+        sourceUrl: String(job.url ?? "").trim(),
+        postedAt: job.created_at
+          ? new Date(job.created_at * 1000).toISOString()
+          : null,
+        tags: [...(job.tags ?? []), ...(job.job_types ?? [])].slice(0, 20),
+      }))
+      .filter((job) => usable(job, 80));
+    return rank(jobs, query);
   }
 }
 
-export interface SearchResult {
-  jobs: DiscoveredJob[];
-  providerErrors: Array<{ provider: string; message: string }>;
-}
+// ---------------------------------------------------------------------------
+// RemoteOK (keyless). Element 0 is a legal notice; every row is remote.
+// Terms: credit Remote OK with a followed link back to the listing.
+// ---------------------------------------------------------------------------
 
 interface RemoteOkJob {
   id?: string | number;
@@ -182,160 +181,15 @@ interface RemoteOkJob {
   url?: string;
   apply_url?: string;
   date?: string;
-  salary_min?: number | string;
 }
 
-interface SerpApiGoogleJob {
-  job_id?: string;
-  title?: string;
-  company_name?: string;
-  location?: string;
-  description?: string;
-  via?: string;
-  posted_at?: string;
-  related_links?: Array<{ link?: string; text?: string }>;
-  detected_extensions?: {
-    posted_at?: string;
-    schedule_type?: string;
-    work_from_home?: boolean;
-  };
-}
-
-/** "3 days ago" / "Over 30 days ago" → ISO; unparseable stays null. */
-function parseRelativePosted(value: string | undefined | null): string | null {
-  const text = (value ?? "").trim().toLowerCase();
-  if (!text) return null;
-  const now = Date.now();
-  if (/just posted|today|now/.test(text)) return new Date(now).toISOString();
-  const units: Record<string, number> = {
-    minute: 60_000,
-    hour: 3_600_000,
-    day: 86_400_000,
-    week: 604_800_000,
-    month: 2_592_000_000,
-    year: 31_536_000_000,
-  };
-  const rel = text.match(/(\d+)\s+(minute|hour|day|week|month|year)s?\s+ago/);
-  if (!rel) return null;
-  const ms = units[rel[2]!];
-  if (!ms) return null;
-  return new Date(now - Number(rel[1]) * ms).toISOString();
-}
-
-/**
- * SerpAPI "Google Jobs" endpoint. The key is private: an unset SERPAPI_API_KEY
- * makes the provider a no-op, and every distinct query costs one API credit so
- * responses are cached per query. It returns real listings with original links.
- */
-export class SerpApiGoogleJobsProvider implements JobSearchProvider {
-  readonly id: string;
-  private readonly apiKey: string;
-
-  constructor(
-    apiKey = process.env.SERPAPI_API_KEY ?? "",
-    private readonly endpoint = "https://serpapi.com/search",
-    id = "google-jobs",
-  ) {
-    this.apiKey = apiKey.trim();
-    this.id = id;
-  }
-
-  async search(query: JobSearchQuery): Promise<DiscoveredJob[]> {
-    if (!this.apiKey) return [];
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10_000);
-    try {
-      const biasedByLocation =
-        query.workArrangement !== "REMOTE" && Boolean(query.location);
-      const searchText = [query.title, biasedByLocation ? query.location : null]
-        .filter(Boolean)
-        .join(" ");
-      if (!searchText.trim()) return [];
-      const cacheKey = JSON.stringify([
-        query.title,
-        query.location ?? "",
-        query.workArrangement ?? "",
-        query.keywords ?? [],
-      ]);
-      const cached = serpCache.get(cacheKey);
-      let sourceJobs: SerpApiGoogleJob[];
-      if (cached && cached.expiresAt > Date.now()) {
-        sourceJobs = cached.jobs;
-      } else {
-        const url = new URL(this.endpoint);
-        url.searchParams.set("engine", "google_jobs");
-        url.searchParams.set("api_key", this.apiKey);
-        url.searchParams.set("q", searchText);
-        url.searchParams.set("hl", "en");
-        if (biasedByLocation) {
-          url.searchParams.set("location", query.location!);
-        }
-        const response = await fetch(url, {
-          headers: { accept: "application/json" },
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const body = (await response.json()) as {
-          error?: string;
-          jobs_results?: SerpApiGoogleJob[];
-        };
-        if (body.error && !Array.isArray(body.jobs_results)) {
-          throw new Error(body.error);
-        }
-        sourceJobs = Array.isArray(body.jobs_results) ? body.jobs_results : [];
-        serpCache.set(cacheKey, {
-          expiresAt: Date.now() + SOURCE_CACHE_TTL_MS,
-          jobs: sourceJobs,
-        });
-      }
-      return sourceJobs
-        .map((job): DiscoveredJob | null => {
-          const title = String(job.title ?? "").trim();
-          const company = String(job.company_name ?? "").trim();
-          const link =
-            (job.related_links ?? [])
-              .find((row) => Boolean(row.link?.trim()))
-              ?.link?.trim() ?? "";
-          const description = plainText(String(job.description ?? ""));
-          if (!title || !company || !link || description.length < 40)
-            return null;
-          const location = String(job.location ?? "Location not listed");
-          const remote =
-            job.detected_extensions?.work_from_home === true ||
-            /remote|work from home|\bwfh\b|fully distributed/i.test(location);
-          return {
-            externalId: String(job.job_id ?? link),
-            provider: this.id,
-            title,
-            company,
-            location,
-            workArrangement: remote ? "REMOTE" : null,
-            description: description.slice(0, 20_000),
-            sourceUrl: link,
-            postedAt: parseRelativePosted(
-              job.detected_extensions?.posted_at ?? job.posted_at,
-            ),
-            tags: job.detected_extensions?.schedule_type
-              ? [job.detected_extensions.schedule_type]
-              : [],
-          };
-        })
-        .filter((job): job is DiscoveredJob => job !== null)
-        .map((job) => ({ job, score: relevance(job, query) }))
-        .filter(({ score }) => score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 15)
-        .map(({ job }) => job);
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-}
-
-/** Free, keyless worldwide remote feed. Isolated like any other provider. */
 export class RemoteOkProvider implements JobSearchProvider {
   readonly id: string;
+  readonly meta: ProviderMeta = {
+    label: "RemoteOK",
+    kind: "keyless",
+    attribution: { name: "Remote OK", url: "https://remoteok.com" },
+  };
 
   constructor(
     private readonly endpoint = "https://remoteok.com/api",
@@ -345,90 +199,195 @@ export class RemoteOkProvider implements JobSearchProvider {
   }
 
   async search(query: JobSearchQuery): Promise<DiscoveredJob[]> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
-    try {
-      const cached = sourceCache.get(this.endpoint);
-      let sourceJobs: RemoteOkJob[];
-      if (cached && cached.expiresAt > Date.now()) {
-        sourceJobs = cached.jobs as RemoteOkJob[];
-      } else {
-        const response = await fetch(this.endpoint, {
-          headers: {
-            accept: "application/json",
-            // The feed asks automated clients to identify themselves.
-            "user-agent": "acme-jobs-discovery/1.0",
-          },
-          signal: controller.signal,
-          cache: "no-store",
+    const sourceJobs = await cached(
+      `remoteok:${this.endpoint}`,
+      FEED_TTL_MS,
+      async () => {
+        const body = await requestJson<unknown>(this.endpoint, {
+          headers: { "user-agent": "acme-jobs-discovery/1.0" },
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const body = (await response.json()) as unknown;
-        sourceJobs = Array.isArray(body)
+        return Array.isArray(body)
           ? body.filter(
               (row): row is RemoteOkJob =>
                 typeof row === "object" && row !== null && "position" in row,
             )
           : [];
-        sourceCache.set(this.endpoint, {
-          expiresAt: Date.now() + SOURCE_CACHE_TTL_MS,
-          jobs: sourceJobs as unknown as ArbeitnowJob[],
-        });
-      }
-      return sourceJobs
-        .map((job): DiscoveredJob | null => {
-          const title = String(job.position ?? "").trim();
-          const company = String(job.company ?? "").trim();
-          const url = String(job.apply_url ?? job.url ?? "").trim();
-          const description = plainText(String(job.description ?? ""));
-          if (!title || !company || !url || description.length < 80)
-            return null;
-          return {
-            externalId: String(job.slug ?? job.id ?? url),
-            provider: this.id,
-            title,
-            company,
-            location: String(job.location ?? "Remote"),
-            workArrangement: "REMOTE",
-            description: description.slice(0, 20_000),
-            sourceUrl: url,
-            postedAt: job.date ? new Date(job.date).toISOString() : null,
-            tags: (job.tags ?? []).slice(0, 20),
-          };
-        })
-        .filter((job): job is DiscoveredJob => job !== null)
-        .map((job) => ({ job, score: relevance(job, query) }))
-        .filter(({ score }) => score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 40)
-        .map(({ job }) => job);
-    } finally {
-      clearTimeout(timer);
-    }
+      },
+    );
+    const jobs = sourceJobs
+      .map((job): DiscoveredJob => ({
+        externalId: String(job.slug ?? job.id ?? job.url ?? ""),
+        provider: this.id,
+        title: String(job.position ?? "").trim(),
+        company: String(job.company ?? "").trim(),
+        location: String(job.location || "Remote"),
+        workArrangement: "REMOTE",
+        description: plainText(String(job.description ?? "")).slice(0, 20_000),
+        // The listing page, not the apply link: RemoteOK's terms require the
+        // link back to Remote OK itself.
+        sourceUrl: String(job.url ?? job.apply_url ?? "").trim(),
+        postedAt: job.date ? new Date(job.date).toISOString() : null,
+        tags: (job.tags ?? []).slice(0, 20),
+      }))
+      .filter((job) => usable(job, 80));
+    return rank(jobs, query);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Google Jobs via SerpAPI (keyed). Indexes LinkedIn, Glassdoor, Indeed and
+// company sites. 250 free searches/month; each page costs one search, and the
+// agent applies a monthly quota guard before calling. Pagination uses
+// next_page_token (`start` was discontinued).
+// ---------------------------------------------------------------------------
+
+interface SerpApiGoogleJob {
+  job_id?: string;
+  title?: string;
+  company_name?: string;
+  location?: string;
+  description?: string;
+  via?: string;
+  share_link?: string;
+  apply_options?: Array<{ title?: string; link?: string }>;
+  related_links?: Array<{ link?: string; text?: string }>;
+  detected_extensions?: {
+    posted_at?: string;
+    schedule_type?: string;
+    work_from_home?: boolean;
+  };
+  posted_at?: string;
+}
+
+interface SerpApiResponse {
+  error?: string;
+  jobs_results?: SerpApiGoogleJob[];
+  serpapi_pagination?: { next_page_token?: string };
+}
+
+export class SerpApiGoogleJobsProvider implements JobSearchProvider {
+  readonly id: string;
+  readonly meta: ProviderMeta = {
+    label: "Google Jobs",
+    kind: "keyed",
+    signupUrl: "https://serpapi.com/users/sign_up",
+  };
+  private readonly apiKey: string;
+  private readonly pages: number;
+
+  constructor(
+    apiKey = process.env.SERPAPI_API_KEY ?? "",
+    private readonly endpoint = "https://serpapi.com/search.json",
+    id = "google-jobs",
+    pages = Number(process.env.SERPAPI_PAGES ?? 2) || 2,
+  ) {
+    this.apiKey = apiKey.trim();
+    this.id = id;
+    this.pages = Math.max(1, Math.min(5, pages));
+  }
+
+  unavailableReason(): string | null {
+    return this.apiKey ? null : "key missing (SERPAPI_API_KEY)";
+  }
+
+  async search(query: JobSearchQuery): Promise<DiscoveredJob[]> {
+    if (!this.apiKey) return [];
+    const remote = query.workArrangement === "REMOTE";
+    const searchText = [query.title, remote ? "remote" : null]
+      .filter(Boolean)
+      .join(" ");
+    if (!query.title.trim()) return [];
+
+    const cacheKey = JSON.stringify([
+      this.endpoint,
+      searchText,
+      query.location ?? "",
+      this.pages,
+    ]);
+    const sourceJobs = await cached(cacheKey, 6 * 60 * 60 * 1000, async () => {
+      const rows: SerpApiGoogleJob[] = [];
+      let token: string | undefined;
+      for (let page = 0; page < this.pages; page += 1) {
+        const url = new URL(this.endpoint);
+        url.searchParams.set("engine", "google_jobs");
+        url.searchParams.set("q", searchText);
+        url.searchParams.set("hl", "en");
+        if (query.location && !remote) {
+          url.searchParams.set("location", query.location);
+        }
+        if (token) url.searchParams.set("next_page_token", token);
+        url.searchParams.set("api_key", this.apiKey);
+        const body = await requestJson<SerpApiResponse>(url.toString());
+        if (body.error && !Array.isArray(body.jobs_results)) {
+          // "Google hasn't returned any results" is an empty page, not a fault.
+          if (/hasn't returned any results/i.test(body.error)) break;
+          throw new ProviderError("HTTP", body.error);
+        }
+        rows.push(...(body.jobs_results ?? []));
+        token = body.serpapi_pagination?.next_page_token;
+        if (!token) break;
+      }
+      return rows;
+    });
+
+    return sourceJobs
+      .map((job): DiscoveredJob => {
+        const link =
+          job.apply_options?.find((o) => o.link?.trim())?.link?.trim() ??
+          job.related_links?.find((r) => r.link?.trim())?.link?.trim() ??
+          job.share_link?.trim() ??
+          "";
+        const location = String(job.location ?? "Location not listed");
+        const remoteJob =
+          job.detected_extensions?.work_from_home === true ||
+          isRemoteText(location);
+        return {
+          externalId: String(job.job_id ?? link),
+          provider: this.id,
+          title: String(job.title ?? "").trim(),
+          company: String(job.company_name ?? "").trim(),
+          location,
+          workArrangement: remoteJob ? "REMOTE" : null,
+          description: plainText(String(job.description ?? "")).slice(
+            0,
+            20_000,
+          ),
+          sourceUrl: link,
+          postedAt: parseRelativePosted(
+            job.detected_extensions?.posted_at ?? job.posted_at,
+          ),
+          tags: job.detected_extensions?.schedule_type
+            ? [job.detected_extensions.schedule_type]
+            : [],
+          via: job.via ? job.via.replace(/^via\s+/i, "") : null,
+        };
+      })
+      .filter((job) => usable(job, 40));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fan-out kept for callers that just want "search everything once".
+// ---------------------------------------------------------------------------
+
+export interface SearchResult {
+  jobs: DiscoveredJob[];
+  providerErrors: Array<{ provider: string; message: string }>;
 }
 
 export async function searchJobs(
   query: JobSearchQuery,
-  providers: JobSearchProvider[] = [
-    new ArbeitnowProvider(),
-    new ArbeitnowProvider(
-      "https://www.arbeitnow.co.uk/api/job-board-api",
-      "arbeitnow-uk",
-    ),
-    new RemoteOkProvider(),
-    new SerpApiGoogleJobsProvider(),
-  ],
+  providers?: JobSearchProvider[],
 ): Promise<SearchResult> {
-  const settled = await Promise.allSettled(
-    providers.map((p) => p.search(query)),
-  );
+  const list =
+    providers ?? (await import("@/jobs/sources/registry")).defaultProviders();
+  const settled = await Promise.allSettled(list.map((p) => p.search(query)));
   const providerErrors: SearchResult["providerErrors"] = [];
   const deduped = new Map<string, DiscoveredJob>();
   const seenUrls = new Set<string>();
 
   settled.forEach((result, index) => {
-    const provider = providers[index]!;
+    const provider = list[index]!;
     if (result.status === "rejected") {
       providerErrors.push({
         provider: provider.id,

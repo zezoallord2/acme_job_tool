@@ -124,10 +124,8 @@ export interface PlanLimits {
   aiAssistCallsPerDay: number;
   savedApplications: number;
   resumeVersions: number;
-  /** Rows returned by the automatic Jobs for You search. */
-  jobsForYouResults: number;
-  /** Profile-derived queries run per automatic search. */
-  jobsForYouQueries: number;
+  // Job search results are no longer limited by plan: every match is shown.
+  // Cost is controlled by the daily fresh-search cap (src/lib/usage-caps.ts).
 }
 
 export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
@@ -137,8 +135,6 @@ export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
     aiAssistCallsPerDay: 20,
     savedApplications: 3,
     resumeVersions: 1,
-    jobsForYouResults: 5,
-    jobsForYouQueries: 2,
   },
   COMPLETE: {
     starStories: Number.POSITIVE_INFINITY,
@@ -146,8 +142,6 @@ export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
     aiAssistCallsPerDay: Number.POSITIVE_INFINITY,
     savedApplications: Number.POSITIVE_INFINITY,
     resumeVersions: Number.POSITIVE_INFINITY,
-    jobsForYouResults: 30,
-    jobsForYouQueries: 6,
   },
 };
 

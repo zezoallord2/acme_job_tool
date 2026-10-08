@@ -728,6 +728,61 @@ Absolute rules:
     buildUserPrompt: ({ cvText }: Record<string, unknown>) =>
       `Extract the profile from this CV.\n\n<cv>\n${String(cvText ?? "")}\n</cv>`,
   },
+
+  JOB_SEARCH_PLAN: {
+    workflowId: "JOB_SEARCH_PLAN",
+    systemPrompt: `You plan a job search for one candidate across public job boards.
+Use ONLY the profile below. Do not invent experience or seniority.
+
+Produce 4-8 DIVERSE job-title queries exactly as employers title these roles:
+- the candidate's target title(s) first;
+- common synonyms of the same role (e.g. "UX Designer" for "Product Designer");
+- adjacent titles the profile genuinely supports;
+- a seniority variant only when the years of experience support it.
+Each title is 1-5 words, no locations, no boolean operators, no quotes.
+
+Then choose up to 12 companies ONLY from the provided company list whose
+industries fit the candidate's target industry and skills (use the slug).
+
+Return ONLY valid JSON:
+{
+  "queries": [ { "title": string, "reason": string } ],
+  "companies": string[],
+  "industries": string[]
+}`,
+    jsonHint: '{"queries":[],"companies":[],"industries":[]}',
+    buildUserPrompt: ({ profile, companies, seed }) =>
+      `${seed ? `THE CANDIDATE TYPED THIS SEARCH: ${String(seed)}
+(Keep it as the first query.)
+
+` : ""}CANDIDATE PROFILE
+${String(profile ?? "(none)")}
+
+COMPANY LIST (slug: name [industries])
+${listOr(companies, "(none)")}`,
+  },
+
+  JOB_RERANK: {
+    workflowId: "JOB_RERANK",
+    systemPrompt: `You rank job listings for one candidate.
+"fit" (0-100) is how well the LISTING matches the candidate's actual profile —
+it is an ordering signal, never a hiring probability.
+"why" is ONE short line (max 20 words) naming a specific overlap between the
+listing and the profile (a skill, tool, domain or title the profile really has).
+Never claim the candidate has something the profile does not show. If the fit
+is weak, say what is missing instead.
+
+Return ONLY valid JSON:
+{ "ranked": [ { "i": number, "fit": number, "why": string } ] }
+Include every listing index you were given.`,
+    jsonHint: '{"ranked":[]}',
+    buildUserPrompt: ({ profile, listings }) =>
+      `CANDIDATE PROFILE
+${String(profile ?? "(none)")}
+
+LISTINGS (index. title — company — location — excerpt)
+${listOr(listings, "(none)")}`,
+  },
 };
 
 export function buildPrompt(

@@ -89,13 +89,23 @@ export async function saveDiscoveredJobAction(formData: FormData) {
     await requireSameOrigin();
     const user = await requireUser();
     await enforceRateLimit("write", { userId: user.id });
+    const title = String(formData.get("title") ?? "");
+    const company = String(formData.get("company") ?? "");
+    const location = String(formData.get("location") ?? "");
+    const sourceUrl = String(formData.get("sourceUrl") ?? "");
+    let description = String(formData.get("description") ?? "").trim();
+    // Some sources (Adzuna, Jooble) return a snippet only. Save what is known
+    // and point to the full posting rather than refusing to save the job.
+    if (description.length < 80) {
+      description = `${title} at ${company}${location ? ` (${location})` : ""}. ${description} The full job description is on the original posting: ${sourceUrl}`;
+    }
     const job = await createJob(user.id, {
-      title: String(formData.get("title") ?? ""),
-      company: String(formData.get("company") ?? ""),
-      location: String(formData.get("location") ?? ""),
-      description: String(formData.get("description") ?? ""),
+      title,
+      company,
+      location,
+      description,
       sourceName: String(formData.get("sourceName") ?? "Public job board"),
-      sourceUrl: String(formData.get("sourceUrl") ?? ""),
+      sourceUrl,
       inputSource: "MANUAL",
     });
     destination = `/app/jobs/${job.id}`;

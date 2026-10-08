@@ -370,6 +370,34 @@ export const ProfileImportSchema = z.object({
   certifications: z.array(z.string().max(200)).max(40).default([]),
 });
 
+export const JobSearchPlanSchema = z.object({
+  queries: z
+    .array(
+      z.object({
+        title: z.string().trim().min(2).max(80),
+        reason: z.string().trim().max(200).default(""),
+      }),
+    )
+    .min(1)
+    .max(10),
+  companies: strArray(20),
+  industries: strArray(8),
+});
+
+export const JobRerankSchema = z.object({
+  ranked: z
+    .array(
+      z.object({
+        i: z.number().int().nonnegative(),
+        fit: z.number().min(0).max(100),
+        why: z.string().trim().max(240).default(""),
+      }),
+    )
+    .max(100),
+});
+
+export type JobSearchPlanOutput = z.infer<typeof JobSearchPlanSchema>;
+export type JobRerankOutput = z.infer<typeof JobRerankSchema>;
 export type JobAnalysisOutput = z.infer<typeof JobAnalysisSchema>;
 export type EvidenceExtractionOutput = z.infer<typeof EvidenceExtractionSchema>;
 export type ResumeBulletOutput = z.infer<typeof ResumeBulletSchema>;
@@ -411,4 +439,6 @@ export const OUTPUT_SCHEMAS = {
   ASK_ACME: AskAcmeSchema,
   DEFEND_CLAIM: DefendClaimSchema,
   PROFILE_IMPORT: ProfileImportSchema,
+  JOB_SEARCH_PLAN: JobSearchPlanSchema,
+  JOB_RERANK: JobRerankSchema,
 } as const;

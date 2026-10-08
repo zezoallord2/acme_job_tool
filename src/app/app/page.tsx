@@ -49,12 +49,14 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  // Same service, same pipeline and same limits as the Jobs for You page.
+  // The dashboard only reads results the Jobs page already fetched: running the
+  // full multi-source search (and two AI calls) on every home-page load would
+  // burn free provider quota for a preview.
   const jobsDiscovery: JobsForYouResult | null = await searchForYou({
     userId: user.id,
-    maxResults: entitlement.isComplete ? 4 : 2,
+    cacheOnly: true,
   }).catch(() => null);
-  const jobsForYou = jobsDiscovery?.results ?? [];
+  const jobsForYou = (jobsDiscovery?.results ?? []).slice(0, 4);
   const jobsGoal = jobsDiscovery?.profile.primaryTargetRoles[0] ?? null;
   const active = applications.filter(
     (application) =>
@@ -178,14 +180,24 @@ export default async function DashboardPage() {
               </Link>
             }
           />
-          {jobsForYou.length === 0 ? (
+          {!jobsDiscovery ? (
+            <EmptyState
+              title="See today's matches"
+              description="Jobs for You searches 15+ public job sources, then AI ranks them against your CV."
+              action={
+                <Link href="/app/jobs" className="btn-primary">
+                  Open Jobs for You
+                </Link>
+              }
+            />
+          ) : jobsForYou.length === 0 ? (
             <EmptyState
               title={
                 jobsGoal ? "No matches found right now" : "Add your job goal"
               }
               description={
                 jobsGoal
-                  ? "Refresh Jobs for You, or relax the location check there."
+                  ? "Widen the search on Jobs for You, or refresh later."
                   : "Tell Acme what role you want so it can search real public listings."
               }
               action={
@@ -239,15 +251,12 @@ export default async function DashboardPage() {
               ))}
             </ul>
           )}
-          {!entitlement.isComplete &&
-          jobsDiscovery &&
-          jobsDiscovery.totalMatched > jobsForYou.length ? (
+          {jobsDiscovery && jobsDiscovery.totalMatched > jobsForYou.length ? (
             <Link
-              href="/pricing"
+              href="/app/jobs"
               className="mt-3 inline-block text-sm underline"
             >
-              Unlock {jobsDiscovery.totalMatched - jobsForYou.length} more
-              matches
+              See all {jobsDiscovery.totalMatched} matches
             </Link>
           ) : null}
         </Card>

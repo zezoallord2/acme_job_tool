@@ -185,6 +185,8 @@ const REQUIRED_KEYS: Partial<Record<WorkflowId, string[]>> = {
   ASK_ACME: ["answer"],
   DEFEND_CLAIM: ["verdict", "reason"],
   PROFILE_IMPORT: ["skills", "roles"],
+  JOB_SEARCH_PLAN: ["queries"],
+  JOB_RERANK: ["ranked"],
 };
 
 export function missingRequiredKeys(
