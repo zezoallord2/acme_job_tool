@@ -3,13 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listInterviews } from "@/services/interview-service";
 import { hasCapability } from "@/services/entitlement-service";
-import {
-  Card,
-  CardHeader,
-  EmptyState,
-  Alert,
-  Stat,
-} from "@/components/ui/primitives";
+import { Card, CardHeader, EmptyState, Stat } from "@/components/ui/primitives";
 import { InterviewForm } from "@/components/interview-form";
 import { formatDateTime } from "@/lib/utils";
 
@@ -41,23 +35,14 @@ export default async function InterviewsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/app/interviews/prep" className="btn-primary">
+          <Link href="/app/interviews/prep" className="btn-secondary">
             Interview Prep
           </Link>
-          <Link href="/app/interviews/practice" className="btn-secondary">
-            Practice Interview
+          <Link href="/app/interviews/practice" className="btn-primary">
+            Mock interview
           </Link>
         </div>
       </header>
-
-      {!isComplete ? (
-        <Alert tone="info" title="Free mock interviews">
-          The Starter plan includes a five-question mock interview. Complete
-          Edition adds Interview Prep, adaptive interviews, post-interview
-          review and the Follow-Up Message.
-        </Alert>
-      ) : null}
-
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Stat
           label="Scheduled"

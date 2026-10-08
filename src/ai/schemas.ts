@@ -60,23 +60,59 @@ export const ResumeBulletSchema = z.object({
   explanation: z.string().trim().max(600).default(""),
 });
 
+/**
+ * RESUME_TAILORING v7: a full tailored resume expressed as reviewable edits.
+ *
+ * The model never returns employers, titles or dates; experience rows are
+ * addressed by index into the user's own resume, and every bullet either names
+ * the original bullet it rewrites or cites evidence. Code turns this into a
+ * change list and refuses anything that adds a fact (src/domain/tailoring.ts).
+ */
 export const ResumeTailoringSchema = z.object({
   summary: z.string().trim().max(2000).default(""),
-  prioritizedSkills: strArray(40),
-  experienceOrder: z.array(z.number().int()).max(40).default([]),
-  bullets: z
+  prioritizedSkills: strArray(60),
+  experiences: z
     .array(
       z.object({
-        section: z.enum(["SUMMARY", "EXPERIENCE", "PROJECT", "SKILLS"]),
-        text: z.string().trim().min(5).max(1000),
-        evidenceIds: z
-          .array(z.number().int().nonnegative())
-          .max(40)
+        index: z.number().int().nonnegative(),
+        bullets: z
+          .array(
+            z.object({
+              text: z.string().trim().min(5).max(600),
+              original: z.string().trim().max(1000).nullable().default(null),
+              evidenceIds: z
+                .array(z.number().int().nonnegative())
+                .max(20)
+                .default([]),
+              why: z.string().trim().max(300).default(""),
+            }),
+          )
+          .max(12)
           .default([]),
-        unsupportedAspects: strArray(20),
       }),
     )
-    .max(60),
+    .max(15)
+    .default([]),
+  changes: z
+    .array(
+      z.object({
+        section: z.string().trim().max(40),
+        what: z.string().trim().max(300),
+        why: z.string().trim().max(300).default(""),
+      }),
+    )
+    .max(20)
+    .default([]),
+  jobKeywords: strArray(40),
+  gaps: z
+    .array(
+      z.object({
+        requirement: z.string().trim().min(1).max(300),
+        question: z.string().trim().min(1).max(400),
+      }),
+    )
+    .max(15)
+    .default([]),
   droppedPoints: z
     .array(z.object({ text: z.string().max(400), reason: z.string().max(300) }))
     .max(30)
@@ -165,6 +201,12 @@ export const InterviewQuestionsSchema = z.object({
         ]),
         rationale: z.string().max(600).default(""),
         expectedSignals: strArray(10),
+        // v6: which slot of the mock interview plan this question fills.
+        slot: z
+          .enum(["OPENER", "BEHAVIOURAL", "ROLE", "GAP", "CLOSER"])
+          .nullable()
+          .default(null),
+        targetsRequirement: z.string().max(300).nullable().default(null),
       }),
     )
     .min(1)
@@ -181,6 +223,10 @@ export const InterviewFeedbackSchema = z.object({
   unsupportedClaims: strArray(20),
   followUpQuestion: z.string().max(600).nullable().default(null),
   coachNote: z.string().max(1200).default(""),
+  // v5: per-answer coaching.
+  strength: z.string().max(400).default(""),
+  improvement: z.string().max(600).default(""),
+  strongerAnswer: z.string().max(2000).default(""),
 });
 
 export const PostInterviewReviewSchema = z.object({
@@ -334,6 +380,34 @@ export const ProfileImportSchema = z.object({
   certifications: z.array(z.string().max(200)).max(40).default([]),
 });
 
+export const JobSearchPlanSchema = z.object({
+  queries: z
+    .array(
+      z.object({
+        title: z.string().trim().min(2).max(80),
+        reason: z.string().trim().max(200).default(""),
+      }),
+    )
+    .min(1)
+    .max(10),
+  companies: strArray(20),
+  industries: strArray(8),
+});
+
+export const JobRerankSchema = z.object({
+  ranked: z
+    .array(
+      z.object({
+        i: z.number().int().nonnegative(),
+        fit: z.number().min(0).max(100),
+        why: z.string().trim().max(240).default(""),
+      }),
+    )
+    .max(100),
+});
+
+export type JobSearchPlanOutput = z.infer<typeof JobSearchPlanSchema>;
+export type JobRerankOutput = z.infer<typeof JobRerankSchema>;
 export type JobAnalysisOutput = z.infer<typeof JobAnalysisSchema>;
 export type EvidenceExtractionOutput = z.infer<typeof EvidenceExtractionSchema>;
 export type ResumeBulletOutput = z.infer<typeof ResumeBulletSchema>;
@@ -375,4 +449,6 @@ export const OUTPUT_SCHEMAS = {
   ASK_ACME: AskAcmeSchema,
   DEFEND_CLAIM: DefendClaimSchema,
   PROFILE_IMPORT: ProfileImportSchema,
+  JOB_SEARCH_PLAN: JobSearchPlanSchema,
+  JOB_RERANK: JobRerankSchema,
 } as const;

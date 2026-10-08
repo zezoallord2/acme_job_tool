@@ -183,14 +183,18 @@ describe("Provider resolution in zero-cost mode", () => {
     expect(manual.costModel).toBe("FREE_MANUAL");
     expect(manual.label).toContain("$0");
 
-    const acme = costs.find((c) => c.provider === "Acme Integrated AI")!;
-    expect(acme.available).toBe(false);
-    expect(acme.label).toContain("Disabled until");
+    // Server free-tier providers are the default, but with no key in the test
+    // environment they must report themselves as unavailable.
+    const gemini = costs.find((c) => c.provider.startsWith("Gemini"))!;
+    expect(gemini.costModel).toBe("ACME_FUNDED");
+    expect(gemini.available).toBe(false);
 
-    for (const provider of ["OpenAI (BYOK)", "Anthropic (BYOK)"]) {
-      const entry = costs.find((c) => c.provider === provider)!;
-      expect(entry.costModel).toBe("BYOK");
-    }
+    const byok = costs.find((c) => c.provider.includes("BYOK"))!;
+    expect(byok.costModel).toBe("BYOK");
+    expect(byok.available).toBe(false);
+    expect(
+      aiCostSummary(true).find((c) => c.provider.includes("BYOK"))!.available,
+    ).toBe(true);
   });
 
   it("rejects oversized prompts before sending career data", async () => {

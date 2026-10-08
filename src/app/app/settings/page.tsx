@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { aiCostSummary, resolveProvider } from "@/ai/router";
+import { aiAvailability, aiCostSummary } from "@/ai/router";
 import { getEntitlementState } from "@/services/entitlement-service";
 import { Card, CardHeader, Alert, Stat } from "@/components/ui/primitives";
 import { SettingsForm } from "@/components/settings-form";
@@ -24,7 +24,7 @@ export default async function SettingsPage({
     typeof params.token === "string" && params.token.length > 8
       ? params.token
       : null;
-  const [settings, entitlement, keys, cost] = await Promise.all([
+  const [settings, entitlement, keys] = await Promise.all([
     prisma.userSettings.findUnique({ where: { userId: user.id } }),
     getEntitlementState(user.id),
     prisma.userApiKey.findMany({
@@ -38,15 +38,13 @@ export default async function SettingsPage({
         keyStatus: true,
       },
     }),
-    Promise.resolve(aiCostSummary()),
   ]);
 
-  const resolution = await resolveProvider({
-    preferManual: settings?.aiProvider === "MANUAL",
-  }).catch(() => null);
-  const providerCosts = cost.map((item) =>
-    item.provider.startsWith("Local AI") ? item : item,
-  );
+  const hasOwnKey = keys.some((k) => k.keyStatus === "ACTIVE");
+  const providerCosts = aiCostSummary(hasOwnKey);
+  const availability = await aiAvailability(
+    hasOwnKey ? { userApiKey: { provider: "GEMINI", key: "present" } } : {},
+  ).catch(() => null);
 
   return (
     <div className="space-y-5">
@@ -71,10 +69,8 @@ export default async function SettingsPage({
           }
         />
         <Stat
-          label="AI mode"
-          value={
-            resolution?.provider.costLabel.split("—")[0]?.trim() ?? "Manual"
-          }
+          label="Default AI"
+          value={availability?.available ? availability.label : "Unavailable"}
         />
         <Stat label="Keys stored" value={keys.length} />
         <Stat
@@ -87,7 +83,7 @@ export default async function SettingsPage({
       <Card>
         <CardHeader
           title="AI provider and cost"
-          description="Cost responsibility is stated exactly. Acme Jobs does not pay for your AI usage and will not claim otherwise."
+          description="AI runs on the server for every account. Your own key is an optional fallback; Manual Mode is always there as a secondary option."
         />
         <div className="table-wrap">
           <table className="data">
@@ -130,7 +126,8 @@ export default async function SettingsPage({
         />
         {keys.length === 0 ? (
           <p className="text-sm text-[var(--text-muted)]">
-            No keys stored. Manual Mode works without one.
+            No keys stored. AI works without one — your own key is only used
+            when the server&apos;s free AI is unavailable.
           </p>
         ) : (
           <ul className="space-y-1.5 text-sm text-[var(--text-muted)]">

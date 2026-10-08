@@ -35,6 +35,8 @@ export const RATE_LIMITS = {
    */
   passwordResetConfirm: { limit: 10, windowMs: 60 * 60_000 },
   aiAssist: { limit: 30, windowMs: 60 * 60_000 },
+  /** Scoring answers inside a capped mock interview session. */
+  interviewAnswer: { limit: 60, windowMs: 60 * 60_000 },
   upload: { limit: 20, windowMs: 60 * 60_000 },
   webhook: { limit: 120, windowMs: 60_000 },
   bugReport: { limit: 10, windowMs: 60 * 60_000 },
@@ -79,7 +81,7 @@ export async function enforceRateLimit(
       );
       if (!daily.allowed) {
         throw Errors.rateLimited(
-          `The Starter plan includes ${state.limits.aiAssistCallsPerDay} AI-assisted actions per day. Upgrade to Complete Edition for unlimited daily use.`,
+          `You have used today's ${state.limits.aiAssistCallsPerDay} AI-assisted actions. The limit resets at midnight UTC.`,
           daily.retryAfterSeconds,
         );
       }

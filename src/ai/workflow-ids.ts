@@ -20,6 +20,10 @@ export const WORKFLOW_IDS = [
   // Reads a user-supplied CV and returns a structured profile. Extraction only:
   // the model may report what the document says and nothing more.
   "PROFILE_IMPORT",
+  // Job search agent: plan diverse queries from the profile, then re-rank the
+  // merged results against it. Neither writes anything about the user.
+  "JOB_SEARCH_PLAN",
+  "JOB_RERANK",
 ] as const;
 
 export type WorkflowId = (typeof WORKFLOW_IDS)[number];
@@ -43,9 +47,9 @@ export const PROMPT_VERSIONS: Record<
     retired: ["v1", "v2"],
   },
   RESUME_TAILORING: {
-    active: "RESUME_TAILORING_PROMPT_v6",
-    candidates: ["RESUME_TAILORING_PROMPT_v7"],
-    retired: ["v1", "v2", "v3", "v4", "v5"],
+    active: "RESUME_TAILORING_PROMPT_v7",
+    candidates: [],
+    retired: ["v1", "v2", "v3", "v4", "v5", "v6"],
   },
   RESUME_BULLET: {
     active: "RESUME_BULLET_PROMPT_v7",
@@ -73,14 +77,14 @@ export const PROMPT_VERSIONS: Record<
     retired: ["v1", "v2", "v3"],
   },
   INTERVIEW_QUESTION: {
-    active: "INTERVIEW_QUESTION_PROMPT_v5",
+    active: "INTERVIEW_QUESTION_PROMPT_v6",
     candidates: [],
-    retired: ["v1", "v2", "v3", "v4"],
+    retired: ["v1", "v2", "v3", "v4", "v5"],
   },
   INTERVIEW_FEEDBACK: {
-    active: "INTERVIEW_FEEDBACK_PROMPT_v4",
+    active: "INTERVIEW_FEEDBACK_PROMPT_v5",
     candidates: [],
-    retired: ["v1", "v2", "v3"],
+    retired: ["v1", "v2", "v3", "v4"],
   },
   POST_INTERVIEW_REVIEW: {
     active: "POST_INTERVIEW_REVIEW_PROMPT_v3",
@@ -115,6 +119,16 @@ export const PROMPT_VERSIONS: Record<
   },
   PROFILE_IMPORT: {
     active: "PROFILE_IMPORT_v1",
+    candidates: [],
+    retired: [],
+  },
+  JOB_SEARCH_PLAN: {
+    active: "JOB_SEARCH_PLAN_v1",
+    candidates: [],
+    retired: [],
+  },
+  JOB_RERANK: {
+    active: "JOB_RERANK_v1",
     candidates: [],
     retired: [],
   },

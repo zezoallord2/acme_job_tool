@@ -98,6 +98,8 @@ const TITLES: Record<WorkflowId, string> = {
   ASK_ACME: "Ask about your job search",
   DEFEND_CLAIM: "Check whether you can defend a claim",
   PROFILE_IMPORT: "Build your profile from your CV",
+  JOB_SEARCH_PLAN: "Plan a job search",
+  JOB_RERANK: "Rank job listings for you",
 };
 
 const PASTE_HINTS: Record<"json" | "text", string> = {

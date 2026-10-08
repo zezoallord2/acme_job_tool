@@ -2,8 +2,8 @@ import { prisma } from "@/lib/db";
 import { Errors } from "@/lib/errors";
 import { hashContent } from "@/lib/crypto";
 import { runWorkflow, getUserApiKeyForWorkflow } from "@/workflows/runner";
+import { providerLabel } from "@/ai/router";
 import { evidenceRecords } from "@/services/evidence-service";
-import { RESUME_CONTENT_SCHEMA } from "@/services/resume-service";
 import type { WorkflowId } from "@/ai/workflow-ids";
 import type { Capability } from "@/domain/entitlements";
 import type {
@@ -13,7 +13,6 @@ import type {
   FollowUpOutput,
   LinkedInOutput,
   ResumeBulletOutput,
-  ResumeTailoringOutput,
   StarStoryOutput,
   VoiceProfileOutput,
 } from "@/ai/schemas";
@@ -77,6 +76,8 @@ export interface StudioResult {
   items: StudioItem[];
   warnings: string[];
   needsInput: string[];
+  /** Which AI produced the output: "Gemini", "OpenRouter", "Manual"… */
+  generatedBy?: string;
 }
 
 export interface StudioWorkflow {
@@ -116,9 +117,9 @@ export class StudioFailure extends Error {
 }
 
 /**
- * `raw` is the pasted response. It is required because Manual Mode is the only
- * path these run through in the zero-cost configuration, and an empty paste must
- * not be mistaken for a result.
+ * `raw` is the pasted response in Manual Mode. When it is empty the workflow
+ * runs on hosted AI (the default); a failure carries the Manual Mode prompt so
+ * the UI can offer it as an explicit second option.
  */
 async function run<T>(
   userId: string,
@@ -130,23 +131,39 @@ async function run<T>(
   warnings: string[];
   interactionId: string;
   promptVersion: string;
+  generatedBy: string;
 }> {
+  const pasted = raw.trim() ? raw : undefined;
   const outcome = await runWorkflow<T>({
     userId,
     workflowId: id,
     context,
     evidence: await evidenceRecords(userId),
     userApiKey: await getUserApiKeyForWorkflow(userId),
-    preferManual: true,
-    manualInput: raw,
+    preferManual: Boolean(pasted),
+    manualInput: pasted,
   });
   if (!outcome.ok) throw new StudioFailure(outcome);
+  lastGeneratedBy = outcome.manual ? "Manual" : providerLabel(outcome.provider);
   return {
     data: outcome.data,
     warnings: outcome.warnings,
     interactionId: outcome.interactionId,
     promptVersion: outcome.promptVersion,
+    generatedBy: lastGeneratedBy,
   };
+}
+
+/**
+ * The label of the provider behind the most recent `run` in this request. Set
+ * synchronously by `run` and read by the action right after `workflow.run`
+ * resolves, so the registry entries do not each need to thread it through.
+ */
+let lastGeneratedBy = "";
+export function consumeGeneratedBy(): string {
+  const value = lastGeneratedBy;
+  lastGeneratedBy = "";
+  return value;
 }
 
 /** AI evidence ids are numeric positions; only the user's own records survive. */
@@ -211,179 +228,6 @@ async function latestVoiceSamples(userId: string): Promise<string[]> {
     ? profile.samples.filter((s): s is string => typeof s === "string")
     : [];
 }
-
-// ---------------------------------------------------------------------------
-// RESUME_TAILORING
-// ---------------------------------------------------------------------------
-
-const RESUME_TAILORING: StudioWorkflow = {
-  id: "RESUME_TAILORING",
-  capability: "RESUME_TAILORING_ADVANCED",
-  title: "Tailor a resume to this job",
-  description:
-    "Reorders, re-words and selects from what your evidence supports. It never adds a fact you do not have, and it saves a draft — it does not send anything.",
-  actionLabel: "Saving the tailored draft",
-  fields: [
-    {
-      name: "applicationId",
-      label: "Application to tailor for",
-      kind: "select",
-      optionsFrom: "applications",
-      hint: "Uses that job's requirements, match breakdown and the resume you sent.",
-    },
-  ],
-  async buildContext(userId, v) {
-    const application = await loadApplication(userId, v.applicationId || null);
-    if (!application) {
-      throw Errors.validation(
-        "Choose an application so the tailored draft is built against a real job.",
-      );
-    }
-    const master = await prisma.resume.findFirst({
-      where: { userId, isMaster: true },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-    });
-    const content = RESUME_CONTENT_SCHEMA.parse(
-      master?.versions[0]?.content ?? {},
-    );
-    const matrix = application.matrix;
-    return {
-      requirements: (application.job.analysis?.requirements ?? []).map((r) => ({
-        text: r.text,
-        isMustHave: r.isMustHave,
-      })),
-      matrixSummary: matrix
-        ? matrix.matches
-            .map((m) => `${m.strength}: ${m.requirement.text}`)
-            .join("\n")
-        : "(no matrix built yet)",
-      currentResume: content,
-      evidence: await evidenceRecords(userId),
-    };
-  },
-  async run(userId, v, raw) {
-    const application = await loadApplication(userId, v.applicationId);
-    if (!application) {
-      throw Errors.validation("Choose an application first.");
-    }
-    const context = await this.buildContext(userId, v);
-    const { data, warnings, interactionId, promptVersion } =
-      await run<ResumeTailoringOutput>(
-        userId,
-        "RESUME_TAILORING",
-        context,
-        raw,
-      );
-
-    // A draft cloned from the main resume, linked to the job and application.
-    // The draft is created after the workflow runs, so a failed validation never
-    // leaves an empty resume behind.
-    const { createJobVersion, updateResumeContent } =
-      await import("@/services/resume-service");
-    const draft = await createJobVersion({
-      userId,
-      jobId: application.job.id,
-      applicationId: application.id,
-      label: `Tailored — ${application.job.title ?? "role"}`,
-    });
-
-    const bySection: Record<string, string[]> = {
-      EXPERIENCE: [],
-      PROJECT: [],
-      SKILLS: [],
-    };
-    for (const b of data.bullets) {
-      bySection[b.section]?.push(b.text);
-    }
-
-    // Created by createJobVersion above; re-read to pick up the version it wrote.
-    const master = await prisma.resume.findFirstOrThrow({
-      where: { userId, isMaster: true },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-    });
-    const base = RESUME_CONTENT_SCHEMA.parse(master.versions[0]?.content ?? {});
-
-    // `experienceOrder` is a list of indices into the master resume, so the
-    // ordering is applied by rank rather than by rewriting the records.
-    const rank = (index: number): number => {
-      const at = data.experienceOrder.indexOf(index);
-      return at === -1 ? Number.MAX_SAFE_INTEGER : at;
-    };
-    const ordered = base.experiences
-      .map((experience, index) => ({ experience, index }))
-      .sort((a, b) => rank(a.index) - rank(b.index))
-      .map(({ experience, index }) => ({
-        ...experience,
-        bullets:
-          index < bySection.EXPERIENCE.length
-            ? [...experience.bullets, ...bySection.EXPERIENCE]
-            : experience.bullets,
-      }));
-
-    const tailored = {
-      ...base,
-      summary: data.summary || base.summary,
-      skills: data.prioritizedSkills.length
-        ? data.prioritizedSkills
-        : base.skills,
-      experiences: ordered,
-    };
-
-    await updateResumeContent({
-      userId,
-      resumeId: draft.id,
-      content: tailored,
-    });
-    await prisma.resume.update({
-      where: { id: draft.id },
-      data: {
-        generationId: interactionId,
-        promptVersion,
-        workflowId: "RESUME_TAILORING",
-      },
-    });
-    const version = await prisma.resumeVersion.findFirst({
-      where: { resumeId: draft.id },
-      orderBy: { version: "desc" },
-      select: { id: true },
-    });
-    if (version) {
-      await prisma.resumeVersion.update({
-        where: { id: version.id },
-        data: {
-          generationId: interactionId,
-          promptVersion,
-          workflowId: "RESUME_TAILORING",
-        },
-      });
-    }
-
-    return {
-      summary:
-        "Tailored draft saved. Nothing was sent, and your main resume is untouched.",
-      savedPath: "/app/resumes",
-      savedLabel: "Open your resumes",
-      rows: [
-        {
-          label: "Skills prioritised",
-          value: data.prioritizedSkills.join(", ") || "unchanged",
-        },
-      ],
-      items: data.bullets.map((b) => ({
-        title: b.text,
-        tags: [b.section],
-        detail: b.unsupportedAspects.length
-          ? `No evidence cited for: ${b.unsupportedAspects.join(", ")}`
-          : undefined,
-      })),
-      warnings: [
-        ...warnings,
-        ...data.droppedPoints.map((d) => `Dropped: ${d.text} — ${d.reason}`),
-      ],
-      needsInput: data.needsInput,
-    };
-  },
-};
 
 // ---------------------------------------------------------------------------
 // RESUME_BULLET
@@ -1252,8 +1096,9 @@ const VOICE_PROFILE: StudioWorkflow = {
 // Registry
 // ---------------------------------------------------------------------------
 
+// Resume tailoring has its own screen (/app/tailor, src/services/tailor-service.ts)
+// with a side-by-side review, so it is not a generic studio panel any more.
 export const STUDIO_WORKFLOWS: Record<string, StudioWorkflow> = {
-  RESUME_TAILORING,
   RESUME_BULLET,
   COVER_LETTER,
   LINKEDIN_OPTIMIZER,

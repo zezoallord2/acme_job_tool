@@ -4,7 +4,7 @@ import { PageHero } from "@/components/marketing";
 export const metadata = {
   title: "Free — AI Job Search Starter Guide",
   description:
-    "Free Edition: Quick Profile, Resume Quick Check, Job Analyzer, basic tailoring, one STAR story, five-question mock interview.",
+    "Free Edition: Quick Profile, Resume Quick Check, Job Analyzer, AI resume tailoring, one STAR story, AI mock interviews.",
 };
 
 const LESSONS = [

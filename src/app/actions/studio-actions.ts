@@ -13,6 +13,7 @@ import { hasCapability } from "@/services/entitlement-service";
 import {
   STUDIO_IDS,
   StudioFailure,
+  consumeGeneratedBy,
   studioDescriptor,
   studioWorkflow,
   type StudioResult,
@@ -22,9 +23,10 @@ import {
 /**
  * Studio actions.
  *
- * Two phases, like every other Manual Mode workflow: build a self-contained
- * prompt, then validate whatever is pasted back. The workflow is chosen by id and
- * resolved through the registry, so this module contains no per-workflow logic.
+ * Default path: one click runs the workflow on hosted AI. Manual Mode is the
+ * explicit second option: build a self-contained prompt, then validate whatever
+ * is pasted back. The workflow is chosen by id and resolved through the
+ * registry, so this module contains no per-workflow logic.
  */
 
 export interface StudioFieldView {
@@ -92,7 +94,7 @@ function fail(e: unknown): StudioSubmitResult {
 function values(formData: FormData): StudioValues {
   const out: StudioValues = {};
   for (const [key, value] of formData.entries()) {
-    if (key === "raw" || key === "workflow") continue;
+    if (key === "raw" || key === "workflow" || key === "mode") continue;
     if (typeof value === "string") out[key] = value;
   }
   return out;
@@ -156,12 +158,15 @@ export async function submitStudioAction(
     const user = await requireUser();
     await enforceRateLimit("aiAssist", { userId: user.id });
     const workflow = await resolve(user.id, formData);
+    // Empty `raw` = the default one-click AI path. A non-empty `raw` is a
+    // Manual Mode paste-back, validated by the same pipeline.
     const raw = String(formData.get("raw") ?? "");
-    if (!raw.trim()) {
+    if (formData.get("mode") === "manual" && !raw.trim()) {
       throw Errors.validation("Paste the assistant's response first.");
     }
 
     const result = await workflow.run(user.id, values(formData), raw);
+    result.generatedBy = consumeGeneratedBy() || undefined;
 
     // Everything a studio workflow can touch, revalidated together.
     for (const path of [

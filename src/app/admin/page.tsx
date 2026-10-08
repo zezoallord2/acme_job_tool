@@ -13,6 +13,8 @@ import { envSummary } from "@/lib/errors";
 import { Card, CardHeader, Alert, Stat } from "@/components/ui/primitives";
 import { AdminControls } from "@/components/admin-controls";
 import { DiagnosticSearch } from "@/components/diagnostic-search";
+import { AdminProviderTester } from "@/components/admin-provider-tester";
+import { defaultProviders } from "@/jobs/sources/registry";
 import { formatDate } from "@/lib/utils";
 import { formatDateTime } from "@/lib/utils";
 
@@ -98,6 +100,20 @@ export default async function AdminPage({
         <Stat label="Bug reports" value={data.bugReports.length} />
         <Stat label="Feature flags" value={flagsCount} />
       </div>
+
+      <Card>
+        <CardHeader
+          title="Job search providers"
+          description="Run one live query against a provider and see the raw error. Keys are never shown."
+        />
+        <AdminProviderTester
+          providers={defaultProviders().map((p) => ({
+            id: p.id,
+            label: p.meta?.label ?? p.id,
+            status: p.unavailableReason?.() ?? "configured",
+          }))}
+        />
+      </Card>
 
       <Card>
         <CardHeader

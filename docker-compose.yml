@@ -2,8 +2,14 @@
 #
 #   docker compose up --build
 #
-# Requires nothing paid. PostgreSQL runs alongside, files live on a named volume,
-# and every AI feature works in Manual Mode with no API key.
+# Requires nothing paid. PostgreSQL runs alongside and files live on a named
+# volume. AI is the default for every user and runs on the SERVER's keys: put a
+# free GEMINI_API_KEY (and optionally OPENROUTER_API_KEY) in the `.env` file next
+# to this compose file. Without a key, AI features say so clearly and offer
+# Manual Mode; they never silently degrade.
+#
+# Keys are read from your shell or `.env` and passed through. Never paste a key
+# into this file.
 #
 # S3 is NOT required for this mode.
 #
@@ -25,9 +31,44 @@ x-app-env: &app-env
   KEY_ENCRYPTION_SECRET: ${KEY_ENCRYPTION_SECRET:?set KEY_ENCRYPTION_SECRET}
 
   ZERO_COST_MODE: "true"
-  ACME_AI_ENABLED: "false"
-  DEFAULT_AI_PROVIDER: manual
-  AI_MODE_PRIORITY: local,manual
+
+  # --- AI (server keys, free tiers) ---------------------------------------
+  # Chain: Gemini -> OpenRouter free model -> the user's own key (Settings).
+  ACME_AI_ENABLED: ${ACME_AI_ENABLED:-true}
+  DEFAULT_AI_PROVIDER: ${DEFAULT_AI_PROVIDER:-gemini}
+  AI_MODE_PRIORITY: ${AI_MODE_PRIORITY:-gemini,openrouter}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+  OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openrouter/free}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+  # Per-user daily caps for the AI-first features (abuse control, not a paywall).
+  TAILOR_DAILY_CAP_FREE: ${TAILOR_DAILY_CAP_FREE:-5}
+  TAILOR_DAILY_CAP_PAID: ${TAILOR_DAILY_CAP_PAID:-30}
+  INTERVIEW_DAILY_CAP_FREE: ${INTERVIEW_DAILY_CAP_FREE:-3}
+  INTERVIEW_DAILY_CAP_PAID: ${INTERVIEW_DAILY_CAP_PAID:-20}
+  JOB_REFRESH_DAILY_CAP_FREE: ${JOB_REFRESH_DAILY_CAP_FREE:-10}
+  JOB_REFRESH_DAILY_CAP_PAID: ${JOB_REFRESH_DAILY_CAP_PAID:-40}
+
+  # --- Job search providers (each is a no-op, shown as "key missing", when unset)
+  JOB_SEARCH_PROVIDERS: ${JOB_SEARCH_PROVIDERS:-}
+  ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+  ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+  ADZUNA_COUNTRIES: ${ADZUNA_COUNTRIES:-us,gb}
+  JOOBLE_API_KEY: ${JOOBLE_API_KEY:-}
+  USAJOBS_API_KEY: ${USAJOBS_API_KEY:-}
+  USAJOBS_USER_AGENT: ${USAJOBS_USER_AGENT:-}
+  THEMUSE_API_KEY: ${THEMUSE_API_KEY:-}
+  SERPAPI_API_KEY: ${SERPAPI_API_KEY:-}
+  SERPAPI_MONTHLY_GLOBAL: ${SERPAPI_MONTHLY_GLOBAL:-240}
+  SERPAPI_MONTHLY_PER_USER: ${SERPAPI_MONTHLY_PER_USER:-10}
+  JSEARCH_API_KEY: ${JSEARCH_API_KEY:-}
+  RAPIDAPI_KEY: ${RAPIDAPI_KEY:-}
+  JSEARCH_MONTHLY_GLOBAL: ${JSEARCH_MONTHLY_GLOBAL:-90}
+  JSEARCH_MONTHLY_PER_USER: ${JSEARCH_MONTHLY_PER_USER:-10}
 
   # MODE A: local files on a persistent volume. No S3 needed.
   STORAGE_DRIVER: local

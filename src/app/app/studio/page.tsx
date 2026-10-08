@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { hasCapability } from "@/services/entitlement-service";
 import { STUDIO_WORKFLOWS } from "@/services/studio-service";
@@ -24,7 +25,7 @@ const GROUPS: Array<{
     heading: "Tailoring to a job",
     blurb:
       "Built from that job's requirements and the resume you actually sent, so you are never preparing against something the employer never saw.",
-    workflows: ["RESUME_TAILORING", "RESUME_BULLET"],
+    workflows: ["RESUME_BULLET"],
   },
   {
     heading: "Documents employers receive",
@@ -85,10 +86,10 @@ export default async function StudioPage() {
       <header>
         <h1 className="page-title text-[var(--text)]">Writing Studio</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-          Every writing tool in one place. Each one works in Manual Mode by
-          default, so it costs $0 and needs no API key: copy the prompt, use any
-          assistant you like, paste the response back, and Acme Jobs validates
-          it against the schema before saving anything.
+          Every writing tool in one place. Click Generate and AI drafts it from
+          your own evidence; every result is validated against the schema before
+          anything is saved. Prefer your own assistant? Each tool also has a
+          manual mode (copy the prompt, paste the answer).
         </p>
       </header>
 
@@ -98,8 +99,23 @@ export default async function StudioPage() {
       >
         {unlocked > 0
           ? "Generated text is always a draft. Read it, check the cited evidence, then decide."
-          : "These tools are part of Complete Edition. Your Starter plan still includes the full My Experience, job analysis, match breakdown and a five-question mock interview."}
+          : "These tools are part of Complete Edition. Your Starter plan still includes the full My Experience, job analysis, match breakdown, AI resume tailoring and AI mock interviews."}
       </Alert>
+
+      <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <h2 className="text-base font-semibold text-[var(--text)]">
+            Tailor a resume to a job
+          </h2>
+          <p className="mt-0.5 text-sm text-[var(--text-muted)]">
+            Side-by-side review with highlighted changes, a keyword match score
+            and PDF/DOCX download.
+          </p>
+        </div>
+        <Link href="/app/tailor" className="btn-primary">
+          Tailor my resume
+        </Link>
+      </div>
 
       {groups.map((group) => (
         <section key={group.heading} className="space-y-3">

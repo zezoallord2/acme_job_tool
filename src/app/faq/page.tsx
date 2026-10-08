@@ -18,7 +18,7 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   },
   {
     q: "What does the free plan include?",
-    a: "Quick Profile, career evidence, Resume Quick Check, basic Job Check, basic Match Breakdown, basic resume tailoring, one STAR story, a five-question mock interview, the 30-minute guided workflow, the Free Starter Guide, limited Acme Assistant and saved work. It is enough to improve one real application.",
+    a: "Quick Profile, career evidence, Resume Quick Check, basic Job Check, basic Match Breakdown, AI resume tailoring, Jobs for You across 16 sources, one STAR story, AI mock interviews, the 30-minute guided workflow, the Free Starter Guide, limited Acme Assistant and saved work. It is enough to improve one real application.",
   },
   {
     q: "What is the Application Details?",

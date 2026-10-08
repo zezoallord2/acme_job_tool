@@ -218,7 +218,7 @@ export default async function ApplicationDetailPage({
               action={
                 isComplete ? (
                   <Link
-                    href={`/app/applications/${app.id}/tailor`}
+                    href={`/app/tailor?applicationId=${app.id}`}
                     className="btn-primary"
                   >
                     Tailor resume

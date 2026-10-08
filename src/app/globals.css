@@ -646,3 +646,24 @@ table.data tr:last-child td {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Resume tailoring: highlighted AI edits. */
+.diff-added {
+  background: var(--color-evidence-strong-bg);
+  color: var(--color-evidence-strong);
+  text-decoration: none;
+  border-radius: 3px;
+}
+.diff-removed {
+  background: var(--color-evidence-missing-bg);
+  color: var(--color-evidence-missing);
+  border-radius: 3px;
+}
+.dark .diff-added {
+  background: #10301f;
+  color: #7fd9a8;
+}
+.dark .diff-removed {
+  background: #2c1616;
+  color: #f08a8a;
+}

@@ -282,34 +282,76 @@ test("the mock interview records answers against real question rows", async ({
   await expect(
     page.getByRole("heading", { name: /mock interview/i }).first(),
   ).toBeVisible();
+  // No mode dropdown, no plan stat: pick a job (or a role) and a length.
+  await expect(page.getByText(/Questions allowed/i)).toHaveCount(0);
+  await page.getByLabel("Job").selectOption({ value: "" });
+  await page.getByLabel("Target role").fill("Reporting Analyst");
+  await page.getByLabel(/Quick/).check();
 
-  await page.getByRole("button", { name: "Start session" }).click();
-  await expect(page.getByText(/Session started with a limit/i)).toBeVisible({
-    timeout: 45_000,
-  });
+  // Manual Mode: the questions come back as a pasted JSON response.
+  await page.getByRole("button", { name: /Use manual mode/ }).click();
+  await expect(page.getByLabel("AI prompt to copy")).toHaveValue(
+    /QUESTION PLAN/,
+    { timeout: 45_000 },
+  );
+  await page.getByLabel("AI response to validate").fill(
+    JSON.stringify({
+      questions: [
+        {
+          question: `Tell me about a time you handled conflicting stakeholder data ${marker}.`,
+          category: "BEHAVIORAL",
+          slot: "BEHAVIOURAL",
+          rationale: "Data ownership",
+          expectedSignals: ["STAR"],
+        },
+      ],
+    }),
+  );
+  await page.getByRole("button", { name: /Validate response/i }).click();
 
-  await page.getByRole("button", { name: "Add questions" }).click();
-  await page
-    .getByLabel("Interview questions to add")
-    .fill(
-      `Tell me about a time you handled conflicting stakeholder data ${marker}.`,
-    );
-  await page.getByRole("button", { name: "Save these questions" }).click();
+  // Quick plan: the opener comes first (standard wording), then our question.
+  await expect(page.getByTestId("interview-question")).toContainText(
+    /Tell me about yourself/,
+    { timeout: 45_000 },
+  );
+  await page.getByRole("button", { name: "Skip" }).click();
+  await expect(page.getByTestId("interview-question")).toContainText(marker);
 
   const answerBox = page.getByLabel(/Your answer/i);
-  await expect(answerBox).toBeVisible({ timeout: 45_000 });
-
   await answerBox.fill(
     "Two teams sent different figures for the same month. I reconciled them " +
       "against the source system, agreed one definition with both leads, and " +
       "documented it so the next close was clean.",
   );
-  await page.getByRole("button", { name: "Submit answer" }).click();
+  await page.getByRole("button", { name: /Use manual mode/ }).click();
+  await expect(page.getByLabel("AI prompt to copy")).toHaveValue(
+    /CANDIDATE ANSWER/,
+    { timeout: 45_000 },
+  );
+  await page.getByLabel("AI response to validate").fill(
+    JSON.stringify({
+      relevance: 4,
+      specificity: 4,
+      evidence: 3,
+      structure: 4,
+      clarity: 4,
+      wasVague: false,
+      unsupportedClaims: [],
+      followUpQuestion: null,
+      coachNote: "",
+      strength: "You named the source system you checked against.",
+      improvement: "Say how long the close took afterwards.",
+      strongerAnswer:
+        "Two teams sent different figures for the same month. I reconciled them against the source system.",
+    }),
+  );
+  await page.getByRole("button", { name: /Validate response/i }).click();
 
-  // The answer is genuinely persisted, not faked with a timer.
-  await expect(page.getByText(/Answer recorded/i).first()).toBeVisible({
-    timeout: 60_000,
-  });
+  // Feedback: four scores, one improvement, a stronger answer.
+  const feedback = page.getByTestId("interview-feedback");
+  await expect(feedback).toBeVisible({ timeout: 60_000 });
+  await expect(feedback).toContainText("Say how long the close took");
+  await expect(feedback).toContainText("A stronger answer");
 
   // The question row is real, so the answer can be attached to it.
   expect(
@@ -361,10 +403,13 @@ test("a free user is offered the upgrade rather than a broken tool", async ({
   // The Manual Mode prompt is not offered to someone who cannot use it.
   await expect(page.getByLabel("AI prompt to copy")).toHaveCount(0);
 
+  // Interview prep points free users at the mock interview instead of an
+  // "Upgrade to unlock" button.
   await page.goto("/app/interviews/prep");
   await expect(
-    page.getByText(/Complete Edition feature/i).first(),
+    page.getByRole("link", { name: "Start a mock interview" }).first(),
   ).toBeVisible();
+  await expect(page.getByText(/Upgrade to unlock/i)).toHaveCount(0);
   await expect(page.getByLabel("AI prompt to copy")).toHaveCount(0);
 });
 

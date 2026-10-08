@@ -50,7 +50,7 @@ describe("AI failure handling with no provider configured", () => {
     await prisma.user.deleteMany({ where: { id: user.id } });
   });
 
-  it("returns Manual Mode instead of failing when no provider exists", async () => {
+  it("fails explicitly and offers Manual Mode when no provider exists", async () => {
     const outcome = await runWorkflow({
       userId: user.id,
       workflowId: "JOB_ANALYSIS",
@@ -69,7 +69,10 @@ describe("AI failure handling with no provider configured", () => {
     ]).toContain(outcome.code);
     expect(outcome.manualFallback).not.toBeNull();
     expect(outcome.manualFallback!.fullPrompt).toContain("ABSOLUTE RULES");
-    expect(outcome.userMessage).toContain("Manual Mode");
+    // Never a silent downgrade: the message says AI did not run, and Manual
+    // Mode is offered as a separate choice.
+    expect(outcome.userMessage).toMatch(/AI is (not configured|unavailable)/);
+    expect(outcome.userMessage).toMatch(/manual mode/i);
   });
 
   it("accepts a valid pasted response and completes the workflow", async () => {

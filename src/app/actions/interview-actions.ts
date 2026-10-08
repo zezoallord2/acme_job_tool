@@ -14,7 +14,6 @@ import {
   getEntitlementState,
   requireCapability,
 } from "@/services/entitlement-service";
-import type { ActionState } from "@/app/actions/state";
 import { generateEvidenceProposalsFromInterview } from "@/services/learning-service";
 
 function fail(e: unknown) {
@@ -178,118 +177,106 @@ export async function markFollowUpSentAction(
   }
 }
 
-export async function addMockQuestionAction(
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState & { questionId?: string }> {
-  try {
-    await requireSameOrigin();
-    const user = await requireUser();
-    await enforceRateLimit("write", { userId: user.id });
+// ---------------------------------------------------------------------------
+// AI mock interview (one question per screen, coached answers)
+// ---------------------------------------------------------------------------
 
-    const sessionId = String(formData.get("sessionId") ?? "");
-    const question = String(formData.get("question") ?? "").trim();
-    if (question.length < 8) {
-      throw Errors.validation("That question is too short to record.");
-    }
+type ManualPrompt = import("@/ai/providers/manual").ManualPromptPackage;
 
-    // Ownership is enforced by looking the session up against the user first.
-    const session = await prisma.interviewSession.findFirst({
-      where: { id: sessionId, userId: user.id },
-      select: { id: true, questionLimit: true },
-    });
-    if (!session) throw Errors.notFound("Interview session");
+export type AiInterviewFailure = {
+  ok: false;
+  message: string;
+  code?: string;
+  prompt?: ManualPrompt;
+  errors?: string[];
+};
 
-    const existing = await prisma.interviewQuestion.count({
-      where: { sessionId: session.id },
-    });
-    if (existing >= session.questionLimit) {
-      throw Errors.validation(
-        `This session is limited to ${session.questionLimit} question(s).`,
-      );
-    }
-
-    const { addQuestion } = await import("@/services/interview-service");
-    const row = await addQuestion({
-      sessionId: session.id,
-      question,
-      category: String(formData.get("category") || "GENERAL") as never,
-      rationale: String(formData.get("rationale") ?? "") || undefined,
-      expectedSignals: String(formData.get("expectedSignals") ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    });
-
-    revalidatePath("/app/interviews/practice");
-    return { ok: true, message: "Question added.", questionId: row.id };
-  } catch (e) {
-    return fail(e);
-  }
-}
-
-export async function recordAnswerAction(_prev: unknown, formData: FormData) {
-  try {
-    await requireSameOrigin();
-    const user = await requireUser();
-    await enforceRateLimit("write", { userId: user.id });
-    const { recordAnswer } = await import("@/services/interview-service");
-    await recordAnswer({
-      userId: user.id,
-      sessionId: String(formData.get("sessionId")),
-      questionId: String(formData.get("questionId")),
-      transcript: String(formData.get("transcript") ?? ""),
-      scores: {
-        relevance: Number(formData.get("relevance") ?? 0),
-        specificity: Number(formData.get("specificity") ?? 0),
-        evidence: Number(formData.get("evidence") ?? 0),
-        structure: Number(formData.get("structure") ?? 0),
-        clarity: Number(formData.get("clarity") ?? 0),
-      },
-      unsupportedClaims: String(formData.get("unsupportedClaims") ?? "")
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      followUpQuestion: String(formData.get("followUpQuestion") ?? "") || null,
-      coachNote: String(formData.get("coachNote") ?? ""),
-      wasVague: formData.get("wasVague") === "true",
-    });
-    revalidatePath("/app/interviews/practice");
-    return { ok: true, message: "Answer recorded." };
-  } catch (e) {
-    return fail(e);
-  }
-}
-
-export async function startMockSessionAction(
-  _prev: unknown,
-  formData: FormData,
-) {
-  try {
-    await requireSameOrigin();
-    const user = await requireUser();
-    await enforceRateLimit("write", { userId: user.id });
-    const state = await getEntitlementState(user.id);
-    const requested = Number(formData.get("questionLimit") ?? 5);
-    const limit = Math.min(
-      requested,
-      state.isComplete ? 30 : state.limits.mockInterviewQuestions,
-    );
-
-    const { startMockSession } = await import("@/services/interview-service");
-    const session = await startMockSession(user.id, {
-      mode: (formData.get("mode") ?? "GENERAL") as never,
-      targetRole: String(formData.get("targetRole") ?? "") || null,
-      questionLimit: limit,
-    });
-
-    revalidatePath("/app/interviews/practice");
+function interviewFail(e: unknown): AiInterviewFailure {
+  if (e instanceof Error && e.name === "InterviewFailure") {
+    const f = e as import("@/services/mock-interview-service").InterviewFailure;
     return {
-      ok: true,
-      message: `Session started with a limit of ${limit} questions.`,
-      sessionId: session.id,
+      ok: false,
+      message: f.message,
+      code: f.code,
+      prompt: f.prompt ?? undefined,
+      errors: f.errors,
     };
+  }
+  return fail(e) as AiInterviewFailure;
+}
+
+function text(value: unknown, max: number): string | null {
+  return typeof value === "string" && value.trim()
+    ? value.trim().slice(0, max)
+    : null;
+}
+
+export async function startAiInterviewAction(raw: Record<string, unknown>) {
+  try {
+    await requireSameOrigin();
+    const user = await requireUser();
+    await enforceRateLimit("aiAssist", { userId: user.id });
+    const manualInput = text(raw.manualInput, 100_000);
+    const manualPrompt = raw.mode === "manual-prompt";
+    // The daily session cap protects hosted AI quota. It is the only limit:
+    // starting a session is never behind a paywall.
+    if (!manualInput && !manualPrompt) {
+      const state = await getEntitlementState(user.id);
+      const { enforceDailyCap } = await import("@/lib/usage-caps");
+      await enforceDailyCap(user.id, "interview", state.isComplete);
+    }
+    const depthRaw = String(raw.depth ?? "STANDARD").toUpperCase();
+    const depth = (["QUICK", "STANDARD", "DEEP"] as const).includes(
+      depthRaw as never,
+    )
+      ? (depthRaw as "QUICK" | "STANDARD" | "DEEP")
+      : "STANDARD";
+    const { startAiInterview } =
+      await import("@/services/mock-interview-service");
+    const result = await startAiInterview(user.id, {
+      applicationId: text(raw.applicationId, 60),
+      targetRole: text(raw.targetRole, 200),
+      depth,
+      manualInput,
+      manualPrompt,
+    });
+    revalidatePath("/app/interviews/practice");
+    return { ok: true as const, ...result };
   } catch (e) {
-    return fail(e);
+    return interviewFail(e);
+  }
+}
+
+export async function answerAiQuestionAction(raw: Record<string, unknown>) {
+  try {
+    await requireSameOrigin();
+    const user = await requireUser();
+    await enforceRateLimit("interviewAnswer", { userId: user.id });
+    const { answerAiQuestion } =
+      await import("@/services/mock-interview-service");
+    const feedback = await answerAiQuestion(user.id, {
+      sessionId: String(raw.sessionId ?? ""),
+      questionId: String(raw.questionId ?? ""),
+      transcript: String(raw.transcript ?? "").slice(0, 8000),
+      manualInput: text(raw.manualInput, 100_000),
+      manualPrompt: raw.mode === "manual-prompt",
+    });
+    return { ok: true as const, feedback };
+  } catch (e) {
+    return interviewFail(e);
+  }
+}
+
+export async function interviewSummaryAction(sessionId: string) {
+  try {
+    await requireSameOrigin();
+    const user = await requireUser();
+    const { interviewSummary } =
+      await import("@/services/mock-interview-service");
+    const summary = await interviewSummary(user.id, sessionId);
+    revalidatePath("/app/interviews/practice");
+    return { ok: true as const, summary };
+  } catch (e) {
+    return interviewFail(e);
   }
 }

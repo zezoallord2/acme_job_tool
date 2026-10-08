@@ -120,34 +120,25 @@ export function planHasCapability(
 /** Hard numeric limits enforced server-side, not just hidden in the UI. */
 export interface PlanLimits {
   starStories: number;
-  mockInterviewQuestions: number;
   aiAssistCallsPerDay: number;
   savedApplications: number;
   resumeVersions: number;
-  /** Rows returned by the automatic Jobs for You search. */
-  jobsForYouResults: number;
-  /** Profile-derived queries run per automatic search. */
-  jobsForYouQueries: number;
+  // Job search results are no longer limited by plan: every match is shown.
+  // Cost is controlled by the daily fresh-search cap (src/lib/usage-caps.ts).
 }
 
 export const PLAN_LIMITS: Record<EntitlementPlan, PlanLimits> = {
   FREE: {
     starStories: 1,
-    mockInterviewQuestions: 5,
     aiAssistCallsPerDay: 20,
     savedApplications: 3,
     resumeVersions: 1,
-    jobsForYouResults: 5,
-    jobsForYouQueries: 2,
   },
   COMPLETE: {
     starStories: Number.POSITIVE_INFINITY,
-    mockInterviewQuestions: Number.POSITIVE_INFINITY,
     aiAssistCallsPerDay: Number.POSITIVE_INFINITY,
     savedApplications: Number.POSITIVE_INFINITY,
     resumeVersions: Number.POSITIVE_INFINITY,
-    jobsForYouResults: 30,
-    jobsForYouQueries: 6,
   },
 };
 
@@ -173,9 +164,10 @@ export const PRICING: PricingTier[] = [
       "Resume Quick Check",
       "Basic Job Check",
       "Basic Match Breakdown",
-      "Basic resume tailoring",
+      "AI resume tailoring (5 per day)",
+      "Jobs for You from 16 job sources",
       "One STAR story",
-      "Five-question Practice Interview",
+      "AI mock interviews (3 per day)",
       "30-minute guided workflow",
       "Free Starter Guide",
       "Limited Acme Assistant",

@@ -164,7 +164,7 @@ const REQUIRED_KEYS: Partial<Record<WorkflowId, string[]>> = {
   JOB_ANALYSIS: ["role", "mustHaveRequirements", "responsibilities"],
   EVIDENCE_EXTRACTION: ["statements"],
   RESUME_BULLET: ["suggestion"],
-  RESUME_TAILORING: ["summary", "bullets"],
+  RESUME_TAILORING: ["summary", "experiences"],
   COVER_LETTER: ["body"],
   LINKEDIN_OPTIMIZER: ["headline", "about"],
   APPLICATION_ANSWER: ["answer"],
@@ -185,6 +185,8 @@ const REQUIRED_KEYS: Partial<Record<WorkflowId, string[]>> = {
   ASK_ACME: ["answer"],
   DEFEND_CLAIM: ["verdict", "reason"],
   PROFILE_IMPORT: ["skills", "roles"],
+  JOB_SEARCH_PLAN: ["queries"],
+  JOB_RERANK: ["ranked"],
 };
 
 export function missingRequiredKeys(

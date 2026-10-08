@@ -247,7 +247,7 @@ describe("Entitlement enforcement is server-side", () => {
       enforceRateLimit("aiAssist", { userId: free.id }),
     ).rejects.toMatchObject({
       code: "RATE_LIMITED",
-      message: expect.stringContaining("Starter plan includes 20"),
+      message: expect.stringContaining("today's 20 AI-assisted actions"),
     });
   });
 
