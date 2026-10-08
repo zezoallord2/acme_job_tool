@@ -54,7 +54,7 @@ test("a paid user sees the full matrix table with per-requirement reasoning", as
 
   await page.goto("/app/interviews");
   await expect(
-    page.getByRole("link", { name: /Practice Interview/i }),
+    page.getByRole("link", { name: /Mock interview/i }),
   ).toBeVisible();
 
   await page.goto("/app/stories");
