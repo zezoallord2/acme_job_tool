@@ -227,6 +227,8 @@ How to tailor:
 - Never invent a number, tool, certification, scope or leadership claim.
 - When the job requires something the user has no evidence for, add a "gaps"
   entry with a short, specific question to ask the user — do not write it in.
+  Include both "requirement" (1-300 characters) and "question" (1-400 characters)
+  in every entry. Return at most 60 gaps; combine duplicate requirements.
 - "jobKeywords": 10-25 important terms copied verbatim from the job text.
 - "changes": a short list of what you changed and why, in plain language.
 

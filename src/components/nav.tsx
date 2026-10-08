@@ -17,8 +17,14 @@ import { usePathname } from "next/navigation";
  * URLs are unchanged; only the words a user reads moved.
  */
 export const NAV_ITEMS = [
-  { href: "/app", label: "Home", short: "Home", icon: "grid" },
+  { href: "/app", label: "Dashboard", short: "Home", icon: "grid" },
   { href: "/app/jobs", label: "Jobs", short: "Jobs", icon: "briefcase" },
+  {
+    href: "/app/job-analysis",
+    label: "Job Analysis",
+    short: "Analyze",
+    icon: "check",
+  },
   { href: "/app/resumes", label: "Resume", short: "Resume", icon: "file" },
   {
     href: "/app/applications",
@@ -178,31 +184,68 @@ export function DesktopNav() {
   const pathname = usePathname();
   return (
     <nav aria-label="Primary" className="hidden w-[206px] shrink-0 lg:block">
-      <ul className="sticky top-[62px] space-y-0.5">
-        {NAV_ITEMS.map((item) => {
-          const active =
-            pathname === item.href ||
-            (item.href !== "/app" && pathname.startsWith(`${item.href}/`));
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className="nav-link flex items-center gap-2.5 px-2.5 py-[9px] text-[13px] no-underline"
-                style={{
-                  background: active
-                    ? "var(--brand-accent-soft)"
-                    : "transparent",
-                  color: active ? "var(--brand-accent)" : "var(--text-muted)",
-                  fontWeight: active ? 600 : 500,
-                }}
-              >
-                <span className="truncate">{item.label}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="editorial-sidebar">
+        <p className="sidebar-eyebrow">Your workspace</p>
+        <ul className="space-y-1">
+          {NAV_ITEMS.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/app" && pathname.startsWith(`${item.href}/`));
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className="nav-link flex items-center gap-2.5 px-2.5 py-[9px] text-[13px] no-underline"
+                  style={{
+                    background: active
+                      ? "var(--brand-accent-soft)"
+                      : "transparent",
+                    color: active ? "var(--brand-accent)" : "var(--text-muted)",
+                    fontWeight: active ? 600 : 500,
+                  }}
+                >
+                  <Icon name={item.icon} size={18} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <Link
+          href="/app/settings"
+          className="nav-link mt-5 flex items-center gap-2.5 px-2.5 py-[9px] text-[13px] no-underline"
+          aria-current={pathname === "/app/settings" ? "page" : undefined}
+        >
+          <Icon name="cog" size={18} /> Settings
+        </Link>
+        <div className="sidebar-note">
+          <svg
+            className="sidebar-botanical"
+            viewBox="0 0 130 150"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M28 145C44 104 66 68 106 16M44 110L18 65M62 79L56 31M78 56L119 45"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <path
+              d="M44 112C19 108 11 87 18 65C35 72 43 85 44 112ZM61 83C41 65 43 45 56 31C69 50 71 63 61 83ZM77 60C83 34 96 23 106 16C111 37 101 52 77 60ZM78 58C93 42 111 40 124 45C112 61 96 66 78 58ZM48 106C70 88 85 88 97 93C86 108 70 113 48 106ZM31 139C13 127 7 113 10 97C29 106 36 120 31 139Z"
+              fill="currentColor"
+              fillOpacity=".22"
+              stroke="currentColor"
+              strokeOpacity=".5"
+            />
+          </svg>
+          <p>
+            A more fulfilling career
+            <br />
+            starts with your next move.
+          </p>
+        </div>
+      </div>
     </nav>
   );
 }
@@ -219,7 +262,8 @@ export function MobileNav() {
       <ul className="mx-auto flex max-w-lg">
         {items.map((item) => {
           const active =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+            pathname === item.href ||
+            (item.href !== "/app" && pathname.startsWith(`${item.href}/`));
           return (
             <li key={item.href} className="min-w-0 flex-1">
               <Link
@@ -230,6 +274,7 @@ export function MobileNav() {
                   color: active ? "var(--brand-accent)" : "var(--text-muted)",
                 }}
               >
+                <Icon name={item.icon} size={18} />
                 <span className="w-full truncate text-center">
                   {item.short}
                 </span>

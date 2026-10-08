@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Acme Jobs — Swiss editorial system. */
+/* Acme Jobs — Warm Editorial design system. */
 
 /*
  * Acme Jobs palette.
@@ -17,15 +17,15 @@
  * navy reserved for navigation and primary actions, teal used as an accent.
  */
 @theme {
-  --color-navy: #0b2d4d;
-  --color-navy-700: #071e33;
-  --color-navy-600: #123f66;
-  --color-teal: #20b7bd;
-  --color-teal-deep: #0d7d84;
-  --color-teal-light: #eaf8f8;
-  --color-app-bg: #f6f9fc;
-  --color-ink: #182938;
-  --color-muted: #607080;
+  --color-navy: #a9431e;
+  --color-navy-700: #813215;
+  --color-navy-600: #bb5229;
+  --color-teal: #687047;
+  --color-teal-deep: #4b572f;
+  --color-teal-light: #edf0df;
+  --color-app-bg: #faf6ee;
+  --color-ink: #39281d;
+  --color-muted: #7b705f;
 
   /* Evidence states must be distinguishable by colour alone as well as by
      label, so they use a conventional scale rather than shades of grey. */
@@ -38,11 +38,9 @@
   --color-evidence-unknown: #5a6b87;
   --color-evidence-unknown-bg: #eef2f8;
 
-  /* One family for body and headings: Inter Variable, self-hosted from
-     @fontsource-variable/inter. The previous stack loaded Clash Display and
-     Satoshi from a third-party CDN at a single weight each, so headings fell
-     back to Arial Black offline and every weight above 500 was synthesised. */
-  --font-display: var(--font-sans);
+  /* Serif display typography pairs with locally hosted Inter for body text. */
+  --font-display:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-sans:
     "Inter Variable", "Inter", "Segoe UI", system-ui, -apple-system,
     "Helvetica Neue", Arial, sans-serif;
@@ -52,39 +50,38 @@
 
 /* Light theme: a cool near-white so the navy/teal brand reads clearly. */
 :root {
-  --background: #f6f9fc;
-  --surface: #ffffff;
+  color-scheme: light;
+  --background: #faf6ee;
+  --surface: #fffdf8;
   --surface-raised: #ffffff;
-  --surface-muted: #eef3f8;
-  --border: #dde6ef;
-  --border-strong: #c7d4e2;
-  --text: #182938;
-  --text-muted: #607080;
-  --brand: #0b2d4d;
-  --brand-strong: #071e33;
-  /* Teal #20B7BD is a mark colour: it fails contrast as small text on white,
-     so links and labels use this darker teal and marks keep the bright one. */
-  --brand-accent: #0d6e78;
-  --brand-accent-soft: #eaf8f8;
+  --surface-muted: #f1ebdf;
+  --border: #e8dfce;
+  --border-strong: #d7c9b3;
+  --text: #39281d;
+  --text-muted: #786b59;
+  --brand: #a9431e;
+  --brand-strong: #813215;
+  --brand-accent: #4b572f;
+  --brand-accent-soft: #edf0df;
   --brand-on-brand: #ffffff;
   --motion-editorial: 160ms cubic-bezier(0.2, 0, 0.1, 1);
 }
 
-/* Dark theme: deep navy surfaces rather than black or neon. */
 .dark {
-  --background: #071e33;
-  --surface: #0b2d4d;
-  --surface-raised: #123f66;
-  --surface-muted: #16405f;
-  --border: #21527a;
-  --border-strong: #3c7ea3;
-  --text: #eef6fb;
-  --text-muted: #a9c1d4;
-  --brand: #20b7bd;
-  --brand-strong: #20b7bd;
-  --brand-accent: #5ed7db;
-  --brand-accent-soft: rgba(32, 183, 189, 0.16);
-  --brand-on-brand: #071e33;
+  color-scheme: dark;
+  --background: #211e18;
+  --surface: #2c281f;
+  --surface-raised: #353024;
+  --surface-muted: #383426;
+  --border: #494232;
+  --border-strong: #625941;
+  --text: #f7efde;
+  --text-muted: #c0b59f;
+  --brand: #bd542b;
+  --brand-strong: #a9431e;
+  --brand-accent: #c2ce98;
+  --brand-accent-soft: #373e28;
+  --brand-on-brand: #ffffff;
 }
 
 html,
@@ -122,6 +119,7 @@ h4 {
 }
 
 .page-title {
+  font-family: var(--font-display);
   font-size: clamp(1.5rem, 1.15rem + 1.4vw, 2.25rem);
   font-weight: 700;
   line-height: 1.12;
@@ -130,6 +128,7 @@ h4 {
 }
 
 .section-title {
+  font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 650;
   line-height: 1.3;
@@ -666,4 +665,251 @@ table.data tr:last-child td {
 .dark .diff-removed {
   background: #2c1616;
   color: #f08a8a;
+}
+
+/* Warm Editorial workspace */
+.page-title {
+  font-size: clamp(2rem, 1.45rem + 2vw, 3.1rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.section-title {
+  font-size: 1.55rem;
+}
+.card {
+  border-radius: 14px;
+  box-shadow: 0 3px 16px rgba(68, 45, 22, 0.025);
+}
+.card h2 {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+}
+.input {
+  background: var(--surface);
+  padding: 0.7rem 0.85rem;
+  border-radius: 9px;
+}
+.btn-primary {
+  padding: 0.75rem 1.2rem;
+  border-radius: 9px;
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(129, 50, 21, 0.12);
+}
+.btn-secondary {
+  padding: 0.75rem 1.2rem;
+}
+.badge-good {
+  background: #edf0df;
+  color: #4b572f;
+}
+.badge-unknown {
+  background: #f1ebdf;
+  color: #786b59;
+}
+.nav-link {
+  border-left: 0;
+  border-radius: 9px;
+  text-transform: none;
+  letter-spacing: normal;
+  min-height: 44px;
+}
+.nav-link:hover {
+  background: var(--surface-muted);
+  transform: none;
+}
+.editorial-sidebar {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 112px);
+  border-right: 1px solid var(--border);
+  padding: 0 20px 0 0;
+}
+.sidebar-eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 8px 12px 16px;
+}
+.sidebar-note {
+  margin-top: auto;
+  padding: 32px 12px 18px;
+  color: var(--brand-accent);
+}
+.sidebar-note p {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+.sidebar-botanical {
+  width: 124px;
+  height: 146px;
+  margin-bottom: 8px;
+}
+.app-header {
+  background: color-mix(in srgb, var(--background) 94%, transparent) !important;
+}
+.editorial-avatar {
+  display: grid;
+  place-items: center;
+  height: 35px;
+  width: 35px;
+  border-radius: 50%;
+  background: #ead1b7;
+  color: #653a22;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.dashboard-hero {
+  border-bottom: 0;
+  padding: 8px 0 4px;
+}
+.dashboard-hero .lede {
+  max-width: 540px;
+}
+.editorial-eyebrow {
+  color: var(--brand-accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.dashboard-stat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--brand-accent-soft);
+}
+.dashboard-stat:nth-child(2) {
+  background: #f8e8d3;
+}
+.dashboard-stat:nth-child(3) {
+  background: #efe9d7;
+}
+.dark .dashboard-stat {
+  background: var(--surface-muted);
+}
+.dashboard-stat strong {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--text);
+}
+.dashboard-stat span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.quick-action {
+  min-height: 106px;
+  background: var(--surface);
+}
+.quick-action h2 {
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+}
+.quick-action svg {
+  color: var(--brand-accent);
+}
+.swiss-home-hero,
+.swiss-page-hero {
+  background: var(--background);
+}
+.swiss-home-hero::after,
+.swiss-page-hero::after {
+  display: none;
+}
+table.data th {
+  text-transform: none;
+  letter-spacing: normal;
+}
+@media (min-width: 1024px) {
+  .workspace-content {
+    gap: 32px;
+    padding-top: 28px;
+  }
+  .app-header > div {
+    min-height: 72px;
+  }
+}
+@media (max-width: 640px) {
+  .dashboard-stats {
+    gap: 8px;
+  }
+  .dashboard-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 12px;
+  }
+  .dashboard-stat strong {
+    font-size: 1.6rem;
+  }
+  .app-header .btn-ghost {
+    padding: 0.35rem;
+    font-size: 0.75rem;
+  }
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+}
+.dashboard-main {
+  grid-template-columns: minmax(0, 1fr);
+}
+.dashboard-main > .card {
+  min-width: 0;
+}
+@media (max-width: 479px) {
+  .header-plan-badge {
+    display: none;
+  }
+}
+.app-header .btn-ghost.hidden {
+  display: none;
+}
+@media (min-width: 640px) {
+  .app-header .btn-ghost.sm\:inline-flex {
+    display: inline-flex;
+  }
+}
+@media (min-width: 768px) {
+  .app-header .btn-ghost.md\:inline-flex {
+    display: inline-flex;
+  }
+}
+.dashboard-jobs {
+  grid-area: jobs;
+}
+.dashboard-tasks {
+  grid-area: tasks;
+}
+.dashboard-profile {
+  grid-area: profile;
+}
+.dashboard-applications {
+  grid-area: applications;
+}
+.dashboard-main {
+  grid-template-areas: "jobs" "tasks" "profile" "applications";
+}
+@media (min-width: 1200px) {
+  .dashboard-main {
+    grid-template-columns: minmax(0, 1.75fr) minmax(290px, 1fr);
+    grid-template-areas: "jobs tasks" "applications profile";
+    align-items: start;
+  }
 }

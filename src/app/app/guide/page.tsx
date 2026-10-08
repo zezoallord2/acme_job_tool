@@ -108,12 +108,6 @@ export default async function GuidePage() {
             </dd>
           </div>
           <div className="card-muted p-3">
-            <dt className="font-semibold text-[var(--text)]">Acme Assistant</dt>
-            <dd className="mt-1 text-[var(--text-muted)]">
-              Ask questions about your saved facts, applications and deadlines.
-            </dd>
-          </div>
-          <div className="card-muted p-3">
             <dt className="font-semibold text-[var(--text)]">Notifications</dt>
             <dd className="mt-1 text-[var(--text-muted)]">
               Deadlines, follow-ups and items that need your decision.

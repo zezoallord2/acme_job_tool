@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateSettingsAction } from "@/app/actions/app-actions";
 import { IDLE, type ActionState } from "@/app/actions/state";
@@ -23,7 +23,13 @@ export function SettingsForm({ settings }: { settings: SettingsValue }) {
     updateSettingsAction as never,
     IDLE,
   );
-  const [theme, setTheme] = useState(settings.theme);
+  const [theme, setTheme] = useState(settings.theme.toLowerCase());
+  useEffect(() => {
+    const sync = () => setTheme(localStorage.getItem("acme-theme") || "light");
+    sync();
+    window.addEventListener("acme-theme-change", sync);
+    return () => window.removeEventListener("acme-theme-change", sync);
+  }, []);
 
   return (
     <form action={formAction} className="space-y-4" noValidate>

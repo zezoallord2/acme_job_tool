@@ -15,8 +15,14 @@
 //   - Bypass entirely when the user is signed in, so a shared or public
 //     install never carries one person's data into another's session.
 
-const CACHE = "acme-shell-v1";
-const SHELL = ["/", "/offline", "/manifest.webmanifest", "/icon.svg", "/brand/logo.png"];
+const CACHE = "acme-shell-warm-editorial-v2";
+const SHELL = [
+  "/",
+  "/offline",
+  "/manifest.webmanifest",
+  "/icon.svg",
+  "/brand/logo.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

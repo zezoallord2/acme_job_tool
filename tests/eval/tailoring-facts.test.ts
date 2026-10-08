@@ -144,6 +144,37 @@ function run(output: unknown) {
 }
 
 describe("Resume tailoring evaluation: no new facts", () => {
+  it("keeps more than 15 gaps and asks for evidence when a question is missing", () => {
+    const gaps = Array.from({ length: 16 }, (_, i) => ({
+      requirement: `Requirement ${i + 1}`,
+      ...(i === 8 ? {} : { question: "Where have you demonstrated this?" }),
+    }));
+    const result = validateWorkflowOutput<
+      ReturnType<typeof ResumeTailoringSchema.parse>
+    >("RESUME_TAILORING", JSON.stringify({ ...CARELESS, gaps }));
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(result.errors.join(" "));
+    expect(result.data.gaps).toHaveLength(16);
+    expect(result.data.gaps[8]!.question).toContain("Requirement 9");
+    expect(result.data.gaps[0]!.question).toBe(gaps[0]!.question);
+    const { changes } = run({ ...CARELESS, gaps });
+    expect(changes.find((c) => c.after.includes("45%"))!.blocked).toMatch(
+      /number/i,
+    );
+  });
+
+  it("still rejects malformed gaps and unbounded gap lists", () => {
+    for (const gaps of [
+      [{ requirement: "", question: "What did you do?" }],
+      [{ requirement: "SQL", question: 123 }],
+      Array.from({ length: 61 }, () => ({ requirement: "SQL" })),
+    ]) {
+      expect(
+        ResumeTailoringSchema.safeParse({ ...CARELESS, gaps }).success,
+      ).toBe(false);
+    }
+  });
+
   it("validates the careless output against the v7 schema", () => {
     const result = validateWorkflowOutput(
       "RESUME_TAILORING",

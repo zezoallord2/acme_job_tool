@@ -10,6 +10,7 @@ import { searchForYou, type JobsForYouResult } from "@/jobs/discovery";
 import { CvImportCard } from "@/components/cv-import-card";
 import { AiStatusBanner } from "@/components/ai-status-banner";
 import { PriorityList } from "@/components/priority-list";
+import { Icon } from "@/components/nav";
 import {
   Card,
   CardHeader,
@@ -31,6 +32,8 @@ export default async function DashboardPage() {
     aiStatus,
     profile,
     skills,
+    savedJobCount,
+    interviewCount,
   ] = await Promise.all([
     getEntitlementState(user.id),
     todayPriorities(user.id),
@@ -47,6 +50,8 @@ export default async function DashboardPage() {
       take: 20,
       select: { name: true },
     }),
+    prisma.jobPosting.count({ where: { userId: user.id } }),
+    prisma.interview.count({ where: { userId: user.id } }),
   ]);
 
   // The dashboard only reads results the Jobs page already fetched: running the
@@ -68,16 +73,51 @@ export default async function DashboardPage() {
   return (
     <div className="dashboard-page space-y-7">
       <header className="dashboard-hero border-b border-[var(--border)] pb-7 pt-4">
-        <p className="text-sm font-medium text-[var(--text-muted)]">
-          {entitlement.isComplete ? "Complete plan" : "Starter plan"}
-        </p>
-        <h1 className="page-title mt-2">
+        <p className="editorial-eyebrow">
           {profile?.firstName
             ? `Welcome back, ${profile.firstName}`
-            : "Welcome back"}
-        </h1>
-        <p className="lede mt-2">What would you like to do today?</p>
+            : "Your workspace"}
+        </p>
+        <h1 className="page-title mt-2">Your next move</h1>
+        <p className="lede mt-2">
+          Find the right opportunities. Make your experience count.
+        </p>
       </header>
+
+      <section className="dashboard-stats" aria-label="Your search at a glance">
+        {[
+          {
+            label: "Saved jobs",
+            value: savedJobCount,
+            icon: "briefcase",
+            href: "/app/jobs",
+          },
+          {
+            label: "Applications",
+            value: applications.length,
+            icon: "file",
+            href: "/app/applications",
+          },
+          {
+            label: "Interviews",
+            value: interviewCount,
+            icon: "calendar",
+            href: "/app/interviews",
+          },
+        ].map((stat) => (
+          <Link
+            key={stat.label}
+            href={stat.href}
+            className="dashboard-stat no-underline"
+          >
+            <Icon name={stat.icon} size={25} />
+            <div>
+              <span>{stat.label}</span>
+              <strong>{stat.value}</strong>
+            </div>
+          </Link>
+        ))}
+      </section>
 
       <section
         aria-label="Quick actions"
@@ -88,21 +128,25 @@ export default async function DashboardPage() {
             href: "/app/jobs",
             title: "Find Jobs",
             detail: "See openings matched to your profile",
+            icon: "briefcase",
           },
           {
             href: "/app/tailor",
             title: "Tailor Resume",
             detail: "Adapt your resume for one job",
+            icon: "file",
           },
           {
             href: "/app/interviews/practice",
             title: "Practice Interview",
             detail: "Get role-specific questions",
+            icon: "calendar",
           },
           {
             href: "/app/profile",
             title: "Update Profile",
             detail: "Add skills, wins or a new CV",
+            icon: "user",
           },
         ].map((action) => (
           <Link
@@ -110,6 +154,9 @@ export default async function DashboardPage() {
             href={action.href}
             className="quick-action card block p-4 no-underline"
           >
+            <div className="mb-2">
+              <Icon name={action.icon} size={20} />
+            </div>
             <h2 className="font-semibold text-[var(--text)]">{action.title}</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
               {action.detail}
@@ -133,15 +180,15 @@ export default async function DashboardPage() {
         />
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-5">
-        <Card className="xl:col-span-3">
+      <div className="dashboard-main grid gap-4">
+        <Card className="dashboard-tasks">
           <CardHeader
-            title="Today's Tasks"
+            title="Your next steps"
             description="Based on real dates, unfinished applications and your profile—not generic advice."
           />
           <PriorityList items={priorities.slice(0, 5)} />
         </Card>
-        <Card className="xl:col-span-2">
+        <Card className="dashboard-profile">
           <CardHeader
             title="Profile setup"
             description={
@@ -163,10 +210,7 @@ export default async function DashboardPage() {
             Improve My Profile
           </Link>
         </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="dashboard-jobs">
           <CardHeader
             title="Jobs for You"
             description={
@@ -261,7 +305,7 @@ export default async function DashboardPage() {
           ) : null}
         </Card>
 
-        <Card>
+        <Card className="dashboard-applications">
           <CardHeader
             title="My Applications"
             description={`${active.length} active · ${applications.length} total`}

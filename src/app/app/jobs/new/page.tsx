@@ -16,13 +16,11 @@ export default async function NewJobPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="page-title text-[var(--text)]">
-          Analyze a job description
-        </h1>
+        <h1 className="page-title text-[var(--text)]">Analyze a job</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-          Paste the description as written. Acme Jobs extracts what the employer
-          actually requires and compares it to your evidence. It does not
-          produce a score, because no universal score exists.
+          Paste a job description or enter its public link. Acme Jobs extracts
+          what the employer actually requires and compares it to your evidence.
+          It does not produce a score, because no universal score exists.
         </p>
       </header>
 
@@ -44,6 +42,11 @@ export default async function NewJobPage() {
             </h2>
             <ul className="mt-2 space-y-2 text-sm text-[var(--text-muted)]">
               <li>
+                <strong className="text-[var(--text)]">Job link</strong> — read
+                a public posting. If the site blocks reading, paste its text
+                instead.
+              </li>
+              <li>
                 <strong className="text-[var(--text)]">Paste</strong> — the
                 reliable path. Full text, no parsing risk.
               </li>
@@ -61,8 +64,7 @@ export default async function NewJobPage() {
               </li>
             </ul>
             <p className="mt-3 text-xs text-[var(--text-muted)]">
-              No job board scraping. No paid job data API. What you paste is
-              what gets analysed.
+              Review the saved description before running the analysis.
             </p>
           </Card>
 

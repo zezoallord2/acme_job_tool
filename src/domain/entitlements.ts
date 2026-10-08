@@ -170,7 +170,6 @@ export const PRICING: PricingTier[] = [
       "AI mock interviews (3 per day)",
       "30-minute guided workflow",
       "Free Starter Guide",
-      "Limited Acme Assistant",
     ],
   },
   {
@@ -202,7 +201,6 @@ export const PRICING: PricingTier[] = [
       "My Applications + Analytics",
       "Career Learning Review",
       "Today's Tasks",
-      "Acme Assistant",
       "14-Day Plan",
       "Complete Edition PDF access",
     ],

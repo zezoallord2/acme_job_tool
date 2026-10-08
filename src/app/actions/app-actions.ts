@@ -111,11 +111,24 @@ export async function createJobAction(_prev: unknown, formData: FormData) {
     const user = await requireUser();
     await enforceRateLimit("write", { userId: user.id });
     const { createJob } = await import("@/services/job-service");
+    let description = String(formData.get("description") ?? "").trim();
+    let sourceUrl: string | null = null;
+    let pageTitle = "";
+    if (formData.get("inputMode") === "link") {
+      const { fetchPublicPageText } = await import("@/lib/safe-fetch");
+      const page = await fetchPublicPageText(
+        String(formData.get("jobUrl") ?? ""),
+      );
+      description = page.text;
+      sourceUrl = page.url;
+      pageTitle = page.title;
+    }
     const job = await createJob(user.id, {
-      title: formData.get("title"),
+      title: formData.get("title") || pageTitle,
       company: formData.get("company"),
       location: formData.get("location"),
-      description: formData.get("description"),
+      description,
+      sourceUrl,
       deadlineAt: formData.get("deadlineAt") || null,
       contactEmail: formData.get("contactEmail") || null,
       sourceName: formData.get("sourceName") || null,

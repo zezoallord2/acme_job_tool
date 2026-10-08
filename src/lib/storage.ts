@@ -76,7 +76,7 @@ export interface PutInput {
 }
 
 export interface StorageProvider {
-  readonly name: "local" | "s3";
+  readonly name: "local" | "s3" | "d1";
   /** True when the driver is selected AND configured well enough to be used. */
   isReady(): boolean;
   put(input: PutInput): Promise<StoredObject>;

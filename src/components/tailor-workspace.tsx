@@ -10,7 +10,6 @@ import {
 import type { TailorProposal } from "@/services/tailor-service";
 import {
   composeTailored,
-  defaultDecisions,
   keywordCoverage,
   type TailorChange,
   type TailorDecision,
@@ -431,7 +430,10 @@ function TailorReview({
   onRestart: () => void;
 }) {
   const [decisions, setDecisions] = useState<Record<string, TailorDecision>>(
-    () => defaultDecisions(proposal.changes),
+    () =>
+      Object.fromEntries(
+        proposal.changes.map((c) => [c.id, { accepted: false }]),
+      ),
   );
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
@@ -575,6 +577,10 @@ function TailorReview({
         <h3 id="changes-heading" className="section-title">
           Review each change ({accepted} of {proposal.changes.length} accepted)
         </h3>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          Accept a change to include it in the preview below. When you finish
+          reviewing, choose Save tailored resume to create your new version.
+        </p>
         <ul className="mt-3 space-y-3">
           {proposal.changes.map((c) => {
             const d = decisions[c.id];
@@ -605,9 +611,12 @@ function TailorReview({
                       className={d?.accepted ? "btn-primary" : "btn-secondary"}
                       aria-pressed={Boolean(d?.accepted)}
                       disabled={!canAccept}
-                      onClick={() => setDecision(c.id, { accepted: true })}
+                      onClick={() => {
+                        setDecision(c.id, { accepted: true });
+                        setEditing((cur) => (cur === c.id ? null : cur));
+                      }}
                     >
-                      Accept
+                      {d?.accepted ? "Accepted" : "Accept"}
                     </button>
                     <button
                       type="button"

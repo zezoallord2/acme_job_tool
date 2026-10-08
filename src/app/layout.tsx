@@ -39,7 +39,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   // Matches the navy in the mark rather than the old grey.
-  themeColor: "#001E54",
+  themeColor: "#faf6ee",
 };
 
 export default function RootLayout({
@@ -53,7 +53,7 @@ export default function RootLayout({
         <script
           // Applies the saved theme before first paint to avoid a flash.
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('acme-theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`,
+            __html: `(function(){try{if(localStorage.getItem('acme-design')!=='warm-editorial-v1'){localStorage.setItem('acme-theme','light');localStorage.setItem('acme-design','warm-editorial-v1');}var t=localStorage.getItem('acme-theme')||'light';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`,
           }}
         />
       </head>

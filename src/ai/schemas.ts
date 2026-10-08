@@ -106,12 +106,20 @@ export const ResumeTailoringSchema = z.object({
   jobKeywords: strArray(40),
   gaps: z
     .array(
-      z.object({
-        requirement: z.string().trim().min(1).max(300),
-        question: z.string().trim().min(1).max(400),
-      }),
+      z
+        .object({
+          requirement: z.string().trim().min(1).max(300),
+          question: z.string().trim().max(400).nullish(),
+        })
+        .transform(({ requirement, question }) => ({
+          requirement,
+          // Ask for evidence; never turn an unanswered gap into a resume claim.
+          question:
+            question ||
+            `Do you have experience or evidence for this requirement: ${requirement}?`,
+        })),
     )
-    .max(15)
+    .max(60)
     .default([]),
   droppedPoints: z
     .array(z.object({ text: z.string().max(400), reason: z.string().max(300) }))

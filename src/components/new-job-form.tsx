@@ -17,6 +17,8 @@ export function NewJobForm() {
     FormData
   >(createJobAction, IDLE);
   const [description, setDescription] = useState("");
+  const [inputMode, setInputMode] = useState("description");
+  const [jobUrl, setJobUrl] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [uploadPending, startUpload] = useTransition();
@@ -70,6 +72,24 @@ export function NewJobForm() {
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
+      <input type="hidden" name="inputMode" value={inputMode} />
+      <div className="flex gap-2" role="tablist" aria-label="Job input method">
+        {[
+          ["description", "Paste description"],
+          ["link", "Job link"],
+        ].map(([mode, label]) => (
+          <button
+            key={mode}
+            type="button"
+            role="tab"
+            aria-selected={inputMode === mode}
+            className={inputMode === mode ? "btn-primary" : "btn-secondary"}
+            onClick={() => setInputMode(mode)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       {state.message && !state.ok ? (
         <Alert tone="error">{state.message}</Alert>
       ) : null}
@@ -138,26 +158,46 @@ export function NewJobForm() {
         </Field>
       </div>
 
-      <Field
-        label="Job description"
-        htmlFor="description"
-        required
-        hint={`Paste the full description including requirements and responsibilities. ${description.length} characters.`}
-      >
-        <textarea
-          id="description"
-          name="description"
-          className="input font-mono"
-          style={{ minHeight: 260 }}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+      {inputMode === "link" ? (
+        <Field
+          label="Job link"
+          htmlFor="jobUrl"
           required
-          minLength={80}
-          placeholder={
-            "Data Analyst\n\nAbout the role…\n\nRequirements:\n- 2+ years in a data or reporting role\n- Advanced Excel…\n- SQL…"
-          }
-        />
-      </Field>
+          hint="Use a public job posting. If the site blocks access, paste its description instead."
+        >
+          <input
+            id="jobUrl"
+            name="jobUrl"
+            type="url"
+            className="input"
+            value={jobUrl}
+            onChange={(e) => setJobUrl(e.target.value)}
+            placeholder="https://company.com/careers/job"
+            maxLength={2000}
+          />
+        </Field>
+      ) : (
+        <Field
+          label="Job description"
+          htmlFor="description"
+          required
+          hint={`Paste the full description including requirements and responsibilities. ${description.length} characters.`}
+        >
+          <textarea
+            id="description"
+            name="description"
+            className="input font-mono"
+            style={{ minHeight: 260 }}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+            minLength={80}
+            placeholder={
+              "Data Analyst\n\nAbout the role…\n\nRequirements:\n- 2+ years in a data or reporting role\n- Advanced Excel…\n- SQL…"
+            }
+          />
+        </Field>
+      )}
 
       <details className="card-muted p-3">
         <summary className="cursor-pointer text-sm font-medium text-[var(--text)]">
@@ -198,14 +238,25 @@ export function NewJobForm() {
         <button
           type="submit"
           className="btn-primary"
-          disabled={pending || description.trim().length < 80}
+          disabled={
+            pending ||
+            (inputMode === "link"
+              ? !/^https?:\/\//i.test(jobUrl.trim())
+              : description.trim().length < 80)
+          }
         >
-          {pending ? "Saving…" : "Save and analyze"}
+          {pending
+            ? inputMode === "link"
+              ? "Reading job link…"
+              : "Saving…"
+            : "Save job for analysis"}
         </button>
         <span className="text-xs text-[var(--text-muted)]">
-          {description.trim().length < 80
-            ? "Paste at least 80 characters to continue."
-            : "Ready to analyse."}
+          {inputMode === "link"
+            ? "Read the posting and save its description."
+            : description.trim().length < 80
+              ? "Paste at least 80 characters to continue."
+              : "Ready to analyse."}
         </span>
       </div>
     </form>

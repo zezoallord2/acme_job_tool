@@ -184,12 +184,28 @@ export function buildPdf(spec: PdfSpec): Buffer {
 }
 
 function escapePdfText(value: string): string {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)")
-    .replace(/[^\x20-\x7E]/g, "?")
-    .slice(0, 250);
+  // Standard-14 fonts use Windows-1252, not Unicode. Encode punctuation using
+  // PDF octal escapes so bullets and typographic quotes keep their glyphs.
+  const punctuation: Record<string, number> = {
+    "€": 0x80,
+    "‘": 0x91,
+    "’": 0x92,
+    "“": 0x93,
+    "”": 0x94,
+    "•": 0x95,
+    "–": 0x96,
+    "—": 0x97,
+    "…": 0x85,
+  };
+  return Array.from(value)
+    .map((char) => {
+      const code = punctuation[char] ?? char.codePointAt(0)!;
+      if ((code >= 0xa0 && code <= 0xff) || punctuation[char] !== undefined)
+        return `\\${code.toString(8).padStart(3, "0")}`;
+      if (code < 0x20 || code > 0x7e) return "?";
+      return /[\\()]/.test(char) ? `\\${char}` : char;
+    })
+    .join("");
 }
 
 /** Word wrap tuned for the standard-14 font metrics. */

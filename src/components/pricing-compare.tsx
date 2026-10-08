@@ -52,7 +52,7 @@ const LABELS: Record<string, string> = {
 
 export function FreeVsComplete() {
   const paidOnly = COMPLETE_CAPABILITIES.filter(
-    (c) => !FREE_CAPABILITIES.includes(c),
+    (c) => c !== "ASK_ACME" && !FREE_CAPABILITIES.includes(c),
   );
   return (
     <div className="mt-4 space-y-5">
@@ -61,7 +61,7 @@ export function FreeVsComplete() {
           Included in Starter (free)
         </h3>
         <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-          {FREE_CAPABILITIES.map((c) => (
+          {FREE_CAPABILITIES.filter((c) => c !== "ASK_ACME").map((c) => (
             <li key={c} className="text-sm text-[var(--text-muted)]">
               <span style={{ color: "var(--brand-accent)" }} aria-hidden>
                 ✓{" "}

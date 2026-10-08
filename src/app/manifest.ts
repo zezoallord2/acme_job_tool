@@ -51,12 +51,6 @@ export default function manifest(): MetadataRoute.Manifest {
         url: "/app/evidence",
         description: "What you can actually prove",
       },
-      {
-        name: "Acme Assistant",
-        short_name: "Ask",
-        url: "/app/ask",
-        description: "Ask about your own data",
-      },
     ],
   };
 }

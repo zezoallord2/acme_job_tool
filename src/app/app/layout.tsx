@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getEntitlementState } from "@/services/entitlement-service";
-import { DesktopNav, MobileNav } from "@/components/nav";
+import { DesktopNav, MobileNav, Icon } from "@/components/nav";
 import { prisma } from "@/lib/db";
 import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -34,27 +35,21 @@ export default async function AppLayout({
           </span>
 
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
             <a
               href="/app/notifications"
               className="btn-ghost relative"
               aria-label={`${unreadNotifications} unread notifications`}
             >
-              <span aria-hidden>NOTICES</span>
+              <Icon name="bell" size={18} />
               {unreadNotifications > 0 ? (
                 <span className="badge badge-partial px-1.5 py-0 text-[10px]">
                   {unreadNotifications > 99 ? "99+" : unreadNotifications}
                 </span>
               ) : null}
             </a>
-            <a
-              href="/app/ask"
-              className="btn-ghost hidden sm:inline-flex"
-              style={{ border: "1px solid var(--border)" }}
-            >
-              Acme Assistant
-            </a>
             <span
-              className="badge"
+              className="badge header-plan-badge"
               style={{
                 background: entitlement.isComplete
                   ? "var(--brand-accent-soft)"
@@ -76,11 +71,18 @@ export default async function AppLayout({
                 Sign out
               </button>
             </form>
+            <a
+              href="/app/settings"
+              className="editorial-avatar no-underline"
+              aria-label="Account settings"
+            >
+              {(user.name || user.email).charAt(0).toUpperCase()}
+            </a>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1440px] flex-1 gap-5 px-3 py-4 sm:px-4">
+      <div className="workspace-content mx-auto flex w-full max-w-[1440px] flex-1 gap-5 px-3 py-4 sm:px-4">
         <DesktopNav />
         <main id="main" className="min-w-0 flex-1 pb-20">
           {children}

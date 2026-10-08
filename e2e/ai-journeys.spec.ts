@@ -53,9 +53,28 @@ test("tailor: paste a job, one click, review changes, save, download", async ({
   await expect(changes.first()).toBeVisible();
   // Highlighted diff of the AI edit.
   await expect(changes.first().locator("ins").first()).toBeVisible();
-  // One-click reject, then accept again.
+  // Review starts unaccepted; clicking Accept updates both state and label.
+  await expect(
+    page.getByRole("heading", { name: /Review each change/ }),
+  ).toContainText("0 of");
+  await changes
+    .first()
+    .getByRole("button", { name: "Accept", exact: true })
+    .click();
+  await expect(
+    changes.first().getByRole("button", { name: "Accepted", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("heading", { name: /Review each change/ }),
+  ).toContainText("1 of");
   await changes.first().getByRole("button", { name: "Reject" }).click();
-  await changes.first().getByRole("button", { name: "Accept" }).click();
+  await expect(
+    page.getByRole("heading", { name: /Review each change/ }),
+  ).toContainText("0 of");
+  await changes
+    .first()
+    .getByRole("button", { name: "Accept", exact: true })
+    .click();
 
   await page.getByRole("button", { name: "Save tailored resume" }).click();
   await expect(page.getByText("Saved as a new version")).toBeVisible({
