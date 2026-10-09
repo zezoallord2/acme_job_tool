@@ -215,7 +215,7 @@ describe("Manual admin entitlement provider", () => {
   it("requires no credentials and is always usable for testing paid features", () => {
     const provider = new ManualAdminEntitlementProvider();
     expect(provider.isConfigured()).toBe(true);
-    expect(provider.verifySignature()).toBe(true);
+    expect(provider.verifySignature()).toBe(false);
     const event = provider.toEntitlementEvent({
       externalEventId: "manual-1",
       externalUserId: "u1",
