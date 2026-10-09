@@ -8,3 +8,6 @@
 
 # Secrets are configured in Netlify, never committed in this file.
 # Database migrations run separately before a production release.
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
