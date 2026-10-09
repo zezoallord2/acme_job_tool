@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
-import { getEntitlementState } from "@/services/entitlement-service";
 import { DesktopNav, MobileNav, Icon } from "@/components/nav";
 import { prisma } from "@/lib/db";
 import { Logo } from "@/components/logo";
@@ -15,10 +14,11 @@ export default async function AppLayout({
 }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  const [entitlement, unreadNotifications] = await Promise.all([
-    getEntitlementState(user.id),
-    prisma.notification.count({ where: { userId: user.id, status: "UNREAD" } }),
-  ]);
+  // Session resolution already checks active, unexpired entitlements.
+  const isComplete = user.plan === "COMPLETE";
+  const unreadNotifications = await prisma.notification.count({
+    where: { userId: user.id, status: "UNREAD" },
+  });
 
   return (
     <div className="app-shell flex min-h-screen flex-col">
@@ -51,15 +51,15 @@ export default async function AppLayout({
             <span
               className="badge header-plan-badge"
               style={{
-                background: entitlement.isComplete
+                background: isComplete
                   ? "var(--brand-accent-soft)"
                   : "var(--surface-muted)",
-                color: entitlement.isComplete
+                color: isComplete
                   ? "var(--brand-accent)"
                   : "var(--text-muted)",
               }}
             >
-              {entitlement.isComplete ? "Complete" : "Starter"}
+              {isComplete ? "Complete" : "Starter"}
             </span>
             {user.isAdmin || user.isInternal ? (
               <a href="/admin" className="btn-ghost hidden md:inline-flex">

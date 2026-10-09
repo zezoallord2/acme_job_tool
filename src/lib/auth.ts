@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers";
+import { cache } from "react";
 import { prisma } from "./db";
 import { env } from "./env";
 import { hashContent, newIdempotencyKey } from "./crypto";
@@ -100,12 +101,13 @@ export async function clearSessionCookie(): Promise<void> {
   });
 }
 
-export async function getSessionUser(): Promise<SessionUser | null> {
+// Share only within one server render; never cache sessions across requests.
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return resolveSession(token);
-}
+});
 
 export async function resolveSession(
   token: string,
