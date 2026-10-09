@@ -41,8 +41,8 @@ export class ManualAdminEntitlementProvider implements BillingProvider {
   }
 
   verifySignature(): boolean {
-    // Manual grants are server-side authenticated by the admin session.
-    return true;
+    // Manual grants use the authenticated admin service, never public webhooks.
+    return false;
   }
 
   async isReplay(): Promise<boolean> {

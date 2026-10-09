@@ -12,6 +12,10 @@ import { getEntitlementState } from "@/services/entitlement-service";
 describe("Webhook signature verification", () => {
   const secret = "whop_test_secret_value";
 
+  it("rejects external webhook deliveries for manual admin billing", () => {
+    expect(new ManualAdminEntitlementProvider().verifySignature()).toBe(false);
+  });
+
   it("accepts a correct HMAC signature", () => {
     const provider = new WhopEntitlementProvider(secret, "prod_123");
     const body = JSON.stringify({
